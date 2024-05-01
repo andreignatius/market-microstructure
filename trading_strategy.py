@@ -2,6 +2,14 @@ import numpy as np
 from scipy.signal import find_peaks
 
 class TradingStrategy:
+    '''
+    - assume you can buy the ask price and sell the bid price on demand
+    - will be in charge of producing buy / sell / hold signals of a security
+    - for UAT / backtesting, we assume we buy / sell on demand at market price to observe behaviour for backtesting
+    - BookKeeper will calculate MTM / PnL accordingly
+    - work with websocket market data to compute all technical indicators realtime and make a call when to buy or sell a security
+    - produces signals to TradeExecutor
+    '''
     def __init__(self, queue):
         self.queue = queue
         self.data = []

@@ -3,6 +3,10 @@ import json
 import datetime
 
 class MarketDataStream:
+    '''
+    - interfaces with market data gateway
+    - for now we interact with market data stream via websocket for TradingStrategy to avoid overloading API limit
+    '''
     def __init__(self, queue):
         self.queue = queue
 

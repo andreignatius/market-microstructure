@@ -4,6 +4,9 @@ import tkinter as tk
 import time
 
 class LivePlotter:
+    '''
+    - acts as UI for users to see trading strategy in action
+    '''
     def __init__(self, master, strategy):
         self.master = master
         self.strategy = strategy
