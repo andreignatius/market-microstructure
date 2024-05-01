@@ -84,3 +84,5 @@ class RiskManager:
         """
         # TODO: Implement the logic to execute stop-loss orders based on risk parameters
         pass
+
+        
