@@ -23,8 +23,9 @@ class MarketDataStream:
             params = {"method": "SUBSCRIBE", "params": ["btcusdt@trade"], "id": 1}
             ws.send(json.dumps(params))
         
-        websocket.enableTrace(True)
+        websocket.enableTrace(False)
         ws = websocket.WebSocketApp("wss://stream.binance.com:9443/ws/btcusdt@trade",
                                     on_message=on_message,
                                     on_open=on_open)
         ws.run_forever()
+
