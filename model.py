@@ -1,28 +1,21 @@
 import numpy as np
+import pandas as pd
 from scipy.signal import find_peaks
 from gtda.homology import VietorisRipsPersistence
 from gtda.diagrams import BettiCurve
 from gtda.time_series import SlidingWindow
-import pandas as pd
-import csv
 
-class TradingStrategy:
-    def __init__(self, queue):
-        self.queue = queue
-        self.data = []
+class HistoricalDataAnalyzer:
+    def __init__(self, data_file):
+        self.data = pd.read_csv(data_file)
         self.peaks = []
         self.troughs = []
-
-    def collect_new_data(self):
-        new_data = []
-        while not self.queue.empty():
-            new_data.append(self.queue.get())
-        self.data.extend(new_data)
-        return new_data
+        self.betti_curves_df = None
+        self.persistence_norms_df = None
 
     def analyze_data(self):
-        times, prices = zip(*self.data)
-        times = [t.timestamp() for t in times]
+        times = pd.to_datetime(self.data['Timestamp'])
+        prices = self.data['Close'].values
 
         min_height = np.std(prices)
         min_distance = 10
@@ -35,8 +28,8 @@ class TradingStrategy:
         self.peaks, self.troughs = peaks, troughs
         return times, prices, peaks, troughs
 
-    def compute_betti_curves(self, window_size=10, max_dimension=1, n_bins=10, filename='betti_curves.csv'):
-        prices = np.array([price for _, price in self.data])
+    def compute_betti_curves(self, window_size=10, max_dimension=1, n_bins=10):
+        prices = self.data['Close'].values
         sliding_window = SlidingWindow(size=window_size, stride=1)
         windows = sliding_window.fit_transform(prices.reshape(-1, 1))
 
@@ -46,16 +39,14 @@ class TradingStrategy:
         betti_curves = BettiCurve(n_bins=n_bins)
         betti_curves_values = betti_curves.fit_transform(diagrams)
 
-        betti_curve_df = pd.DataFrame(
+        self.betti_curves_df = pd.DataFrame(
             betti_curves_values.reshape(-1, max_dimension+1),
             columns=[f'BettiCurve_{dim}' for dim in range(max_dimension+1)]
         )
+        return self.betti_curves_df
 
-        betti_curve_df.to_csv(filename, index=False)
-        return betti_curve_df
-
-    def compute_persistence_norms(self, filename='persistence_norms.csv'):
-        prices = np.array([price for _, price in self.data])
+    def compute_persistence_norms(self):
+        prices = self.data['Close'].values
         prices_reshaped = prices.reshape(1, -1, 1)
 
         VR_persistence = VietorisRipsPersistence(homology_dimensions=[0, 1])
@@ -71,15 +62,13 @@ class TradingStrategy:
             l1_norms.append(l1_norm)
             l2_norms.append(l2_norm)
 
-        norms_df = pd.DataFrame({
+        self.persistence_norms_df = pd.DataFrame({
             'L1_Persistence': l1_norms,
             'L2_Persistence': l2_norms
         })
+        return self.persistence_norms_df
 
-        norms_df.to_csv(filename, index=False)
-        return norms_df
-
-    def generate_signals(self, filename='signals.csv'):
+    def generate_labels(self, filename='historical_labels.csv'):
         times, prices, peaks, troughs = self.analyze_data()
         betti_curves_df = self.compute_betti_curves()
         persistence_norms_df = self.compute_persistence_norms()
@@ -93,24 +82,29 @@ class TradingStrategy:
             else:
                 signals.append('Hold')
 
-        # Convert times to readable format
-        times = [pd.to_datetime(t, unit='s') for t in times]
+        # Ensure times are properly formatted
+        times = [t.strftime('%Y-%m-%d %H:%M:%S') for t in times]
 
-        # Create the signals dataframe
-        signal_df = pd.DataFrame({
+        # Create the labels dataframe
+        labels_df = pd.DataFrame({
             'Timestamp': times,
             'Price': prices,
             'Signal': signals
         })
 
-        # Ensure betti_curves_df and persistence_norms_df have the same length as signal_df
-        betti_curves_df = betti_curves_df.reindex(signal_df.index, method='ffill')
-        persistence_norms_df = persistence_norms_df.reindex(signal_df.index, method='ffill')
+        # Ensure betti_curves_df and persistence_norms_df have the same length as labels_df
+        betti_curves_df = betti_curves_df.reindex(labels_df.index, method='ffill')
+        persistence_norms_df = persistence_norms_df.reindex(labels_df.index, method='ffill')
 
         # Concatenate all dataframes
-        combined_df = pd.concat([signal_df, betti_curves_df, persistence_norms_df], axis=1)
+        combined_df = pd.concat([labels_df, betti_curves_df, persistence_norms_df], axis=1)
 
         # Save to CSV
         combined_df.to_csv(filename, index=False)
-        return signals, betti_curves_df, persistence_norms_df
+        return combined_df
 
+if __name__ == "__main__":
+    data_file = 'binance_btcusdt_1min_ccxt.csv'  # Replace with your historical data file
+    analyzer = HistoricalDataAnalyzer(data_file)
+    combined_df = analyzer.generate_labels()
+    print(f"Labels saved to historical_labels.csv")
