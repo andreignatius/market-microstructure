@@ -33,6 +33,8 @@ class LivePlotter:
             times, prices = zip(*self.data_buffer)
             self.strategy.data = self.data_buffer
             self.strategy.analyze_data()
+            betti_curves_df = self.strategy.compute_betti_curves()  # Compute Betti curves
+            persistence_norms_df = self.strategy.compute_persistence_norms()  # Compute Persistence norms
             self.line.set_data(times, prices)
             self.peaks_plot.set_data([times[p] for p in self.strategy.peaks], [prices[p] for p in self.strategy.peaks])
             self.troughs_plot.set_data([times[t] for t in self.strategy.troughs], [prices[t] for t in self.strategy.troughs])
@@ -41,6 +43,8 @@ class LivePlotter:
                 print(f"Latest BTC Price: ${prices[-1]:.2f}, {diff:.2f}")
                 print("peaks: ", [times[p] for p in self.strategy.peaks], [prices[p] for p in self.strategy.peaks])
                 print("troughs: ", [times[p] for p in self.strategy.troughs], [prices[p] for p in self.strategy.troughs])
+                print("Betti Curves: \n", betti_curves_df)
+                print("Persistence Norms: \n", persistence_norms_df)
                 self.file.write(f"{times[-1]}: ${prices[-1]:.2f}, Change: {diff:.2f}\n")  # Log each new price
                 self.file.flush()
             self.last_price = prices[-1]
