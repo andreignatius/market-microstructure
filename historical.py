@@ -25,7 +25,7 @@ def fetch_binance_ohlcv(symbol, timeframe, since, limit=500):
 # Parameters
 symbol = 'BTC/USDT'
 timeframe = '1m'  # 1-minute granularity
-since = exchange.parse8601('2024-05-10T00:00:00Z')  # Start date
+since = exchange.parse8601('2024-04-14T00:00:00Z')  # Start date
 
 data = fetch_binance_ohlcv(symbol, timeframe, since)
 

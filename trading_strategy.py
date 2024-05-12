@@ -114,3 +114,15 @@ class TradingStrategy:
         combined_df.to_csv(filename, index=False)
         return signals, betti_curves_df, persistence_norms_df
 
+    def reference_model(self):
+        raw_data.to_csv('temp_data.csv')
+        
+        # Initialize and use the BaseModel for advanced analysis
+        # model = BaseModel(file_path='temp_data.csv', train_start='2013-01-01', train_end='2018-01-01', test_start='2018-01-01', test_end='2023-01-01')
+        model = LogRegModel(file_path='temp_data.csv', train_start='2013-01-01', train_end='2018-01-01', test_start='2018-01-01', test_end='2023-01-01')
+        model.load_preprocess_data()  # Load and preprocess the data
+        model.train_test_split_time_series()  # Split data into training and testing
+        model.train()  # Placeholder for training method
+
+        data = model.retrieve_test_set()
+
