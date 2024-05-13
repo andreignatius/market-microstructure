@@ -1,7 +1,9 @@
 import logging
 
 from logreg_model import LogRegModel
-from trading_strategy import TradingStrategy
+# from trading_strategy import TradingStrategy
+from backtest_trading_strategy import BacktestTradingStrategy
+import joblib
 
 class ReviewEngine:
     '''
@@ -90,44 +92,44 @@ if __name__ == "__main__":
     model.train()  # Placeholder for training method
 
     data = model.retrieve_test_set()
-    # predicted_categories = model.predict()
 
+    # model = joblib.load('logistic_regression_model.pkl')
     # Perform backtesting, log trades, calculate final portfolio value
     # ... [Your backtesting logic here] ...
     # Backtesting with stop-loss and take-profit
     # Instantiate the TradingStrategy class
     # trading_strategy = TradingStrategy(model, data, leverage_factor=leverage_factor, annual_interest_rate=annual_interest_rate)
-    # trading_strategy = TradingStrategy(model, data)
-    # # Run the trading strategy with the model's predictions
-    # trading_strategy.execute_trades()
+    trading_strategy = BacktestTradingStrategy(model, data)
+    # Run the trading strategy with the model's predictions
+    trading_strategy.execute_trades()
 
-    # # Retrieve results and output
-    # trading_results = trading_strategy.evaluate_performance()
+    # Retrieve results and output
+    trading_results = trading_strategy.evaluate_performance()
 
-    # trade_log = trading_results['Trade Log']
-    # final_portfolio_value = trading_results['Final Portfolio Value']
-    # pnl_per_trade = trading_results['Profit/Loss per Trade']
-    # interest_costs = sum(trading_results['Interest Costs'])
-    # transaction_costs = trading_results['Transaction Costs']
-    # print("interest_costs111: ", interest_costs)
-    # print("transaction_costs111: ", transaction_costs)
+    trade_log = trading_results['Trade Log']
+    final_portfolio_value = trading_results['Final Portfolio Value']
+    pnl_per_trade = trading_results['Profit/Loss per Trade']
+    interest_costs = sum(trading_results['Interest Costs'])
+    transaction_costs = trading_results['Transaction Costs']
+    print("interest_costs111: ", interest_costs)
+    print("transaction_costs111: ", transaction_costs)
 
-    # interest_costs_total.append( interest_costs )
-    # transaction_costs_total.append( transaction_costs )
+    interest_costs_total.append( interest_costs )
+    transaction_costs_total.append( transaction_costs )
 
-    # # Output
-    # print(trade_log)
-    # print("num trades: ", len(trade_log))
-    # print(f"Final Portfolio Value Before Cost: {final_portfolio_value}")
-    # final_portfolio_value = final_portfolio_value - ( interest_costs + transaction_costs )
-    # print(f"Final Portfolio Value After Cost: {final_portfolio_value}")
+    # Output
+    print(trade_log)
+    print("num trades: ", len(trade_log))
+    print(f"Final Portfolio Value Before Cost: {final_portfolio_value}")
+    final_portfolio_value = final_portfolio_value - ( interest_costs + transaction_costs )
+    print(f"Final Portfolio Value After Cost: {final_portfolio_value}")
 
-    # # pnl_per_trade = ( final_portfolio_value - starting_cash ) / len(trade_log)
-    # print("PnL per trade: ", pnl_per_trade)
+    # pnl_per_trade = ( final_portfolio_value - starting_cash ) / len(trade_log)
+    print("PnL per trade: ", pnl_per_trade)
 
-    # # Collect results
-    # trade_logs.append(trade_log)
-    # final_portfolio_values.append(final_portfolio_value)
+    # Collect results
+    trade_logs.append(trade_log)
+    final_portfolio_values.append(final_portfolio_value)
 
 
 
