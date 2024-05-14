@@ -23,7 +23,7 @@ class RiskManager:
         return True
 
     def perform_stress_test(self):
-        """
+        """ test 123
         Conduct stress tests and scenario analyses to assess potential impact of extreme market events.
         """
         # TODO: Implement stress testing logic
