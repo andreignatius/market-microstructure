@@ -1,12 +1,16 @@
 import asyncio
-from threading import Thread
-from binance import AsyncClient, BinanceSocketManager, Client
 import logging
+from threading import Thread
 
-logging.basicConfig(format='%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s', level=logging.INFO)
+from binance import AsyncClient, BinanceSocketManager, Client
+
+logging.basicConfig(
+    format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
+    level=logging.INFO,
+)
+
 
 class DataStream:
-
     def __init__(self, symbol: str, api_key=None, api_secret=None):
         self._api_key = api_key
         self._api_secret = api_secret
@@ -28,19 +32,21 @@ class DataStream:
         # callbacks
         self._tick_callbacks = []
 
-        self.output = {'lastprice' : '',
-                       'lastquantity' : '',
-                       'bestbidprice' : '',
-                       'bestbidquantity' : '',
-                       'bestaskprice' : '',
-                       'bestaskquantity' : ''}
-
+        self.output = {
+            "lastprice": "",
+            "lastquantity": "",
+            "bestbidprice": "",
+            "bestbidquantity": "",
+            "bestaskprice": "",
+            "bestaskquantity": "",
+        }
 
     """
         Connect method to start exchange connection
     """
+
     def connect(self):
-        logging.info('Initializing connection')
+        logging.info("Initializing connection")
 
         self._loop.run_until_complete(self._reconnect_ws())
 
@@ -57,7 +63,7 @@ class DataStream:
 
     # an internal method to runs tasks in parallel
     def _run_async_tasks(self):
-        """ Run the following tasks concurrently in the current thread """
+        """Run the following tasks concurrently in the current thread"""
         self._loop.create_task(self._listen_market_forever())
         self._loop.run_forever()
 
@@ -69,7 +75,11 @@ class DataStream:
             if not self._multi_socket:
                 logging.info("depth socket not connected, reconnecting")
                 self._binance_socket_manager = BinanceSocketManager(self._async_client)
-                self._multi_socket = self._binance_socket_manager.futures_multiplex_socket(['btcusdt@trade', 'btcusdt@bookTicker'])
+                self._multi_socket = (
+                    self._binance_socket_manager.futures_multiplex_socket(
+                        ["btcusdt@trade", "btcusdt@bookTicker"]
+                    )
+                )
 
             # wait for depth update
             try:
@@ -77,15 +87,15 @@ class DataStream:
                 async with self._multi_socket as ms:
                     self._market_cache = await ms.recv()
 
-                    if '@trade' in self._market_cache['stream']:
-                        self.output['lastprice'] = self._market_cache['data']['p']
-                        self.output['lastquantity'] = self._market_cache['data']['q']
+                    if "@trade" in self._market_cache["stream"]:
+                        self.output["lastprice"] = self._market_cache["data"]["p"]
+                        self.output["lastquantity"] = self._market_cache["data"]["q"]
                     else:
-                        self.output['bestbidprice'] = self._market_cache['data']['b']
-                        self.output['bestbidquantity'] = self._market_cache['data']['B']
+                        self.output["bestbidprice"] = self._market_cache["data"]["b"]
+                        self.output["bestbidquantity"] = self._market_cache["data"]["B"]
 
-                        self.output['bestaskprice'] = self._market_cache['data']['a']
-                        self.output['bestaskquantity'] = self._market_cache['data']['A']
+                        self.output["bestaskprice"] = self._market_cache["data"]["a"]
+                        self.output["bestaskquantity"] = self._market_cache["data"]["A"]
 
                     print(self.output)
                     if self._tick_callbacks:
@@ -94,7 +104,7 @@ class DataStream:
                             _callback(self.output)
 
             except Exception as e:
-                logging.exception('encountered issue in depth processing')
+                logging.exception("encountered issue in depth processing")
                 # reset socket and reconnect
                 self._multi_socket = None
                 await self._reconnect_ws()
@@ -108,13 +118,13 @@ def on_tick(s):
     return s
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # get api key and secret
-    api_key = ''
-    api_secret = ''
+    api_key = ""
+    api_secret = ""
 
     # create a binance gateway object
-    stream = DataStream('BTCUSDT', api_key, api_secret)
+    stream = DataStream("BTCUSDT", api_key, api_secret)
 
     # register callbacks
     stream.register_tick_callback(on_tick)
