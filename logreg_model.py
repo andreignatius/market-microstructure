@@ -38,6 +38,8 @@ class LogRegModel(BaseModel):
         # self.data['PredictedLabel'] = self.model.predict(self.scaler.transform(self.X))
         # return self.data
         # predicted_categories = self.model.predict(self.scaler.transform(self.X_test_scaled))
+        print("X_test shape: ", self.X_test.shape)
+        # X_test shape:  (11520, 13)
         predicted_categories = self.model.predict(self.X_test)
         # print("CHECK predicted_labels: ", predicted_categories)
         return predicted_categories

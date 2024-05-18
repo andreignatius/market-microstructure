@@ -31,14 +31,14 @@ class BacktestTradingStrategy:
             # if self.btc_inventory > 0:
             #     self.daily_return_factors.append(1 + (daily_change_percentage * self.leverage_factor))
 
-            # is_stop_loss_triggered = self._check_stop_loss(usd_btc_spot_rate, current_date)
+            is_stop_loss_triggered = self._check_stop_loss(usd_btc_spot_rate, current_date)
 
             # if is_stop_loss_triggered:
             #     continue
             print("cash: ", self.cash, "trading_lot: ", self.trading_lot)
             if prediction == 'Buy' and self.cash >= self.trading_lot:
                 self._buy_btc(usd_btc_spot_rate, current_date)
-            elif prediction == 'Sell' and self.btc_inventory > 0:
+            elif prediction == 'Sell' and self.btc_inventory > 0 and ( self.buy_price is None or (self.buy_price is not None and usd_btc_spot_rate > self.buy_price * 1.01) ):
                 self._sell_btc(usd_btc_spot_rate, current_date)
 
             # if row['Label'] == 'Sell' and self.cash >= self.trading_lot and ( self.buy_price is None or (self.buy_price is not None and ( usd_jpy_spot_rate < self.buy_price * 0.99 or usd_jpy_spot_rate > self.buy_price * 1.01) ) ):
