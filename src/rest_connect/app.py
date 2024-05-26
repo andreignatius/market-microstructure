@@ -1,6 +1,7 @@
-from rest_factory import *
-import time
 import ctypes
+import time
+
+from rest_factory import *
 
 
 def stars():

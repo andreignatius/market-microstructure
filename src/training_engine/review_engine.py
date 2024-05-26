@@ -1,18 +1,21 @@
 import logging
 
-from logreg_model import LogRegModel
-# from trading_strategy import TradingStrategy
-from backtest_trading_strategy import BacktestTradingStrategy
 import joblib
 
+# from trading_strategy import TradingStrategy
+from backtest_trading_strategy import BacktestTradingStrategy
+from logreg_model import LogRegModel
+
+
 class ReviewEngine:
-    '''
+    """
     Manages the lifecycle of an ML model used for trading, including retraining, updating,
     backtesting, and performance assessment.
     - retrains and updates ML model periodically based on historical feature engineering indicators
     - perform necessary backtesting and assess performance
     - updates ML model that provides signal to strategy engine (TradingStrategy class)
-    '''
+    """
+
     def __init__(self, model):
         self.model = model
         self.logger = logging.getLogger(__name__)
@@ -74,10 +77,9 @@ class ReviewEngine:
         pass
 
 
-
 if __name__ == "__main__":
-    start_date = '2024-04-14'
-    end_date = '2023-05-10'
+    start_date = "2024-04-14"
+    end_date = "2023-05-10"
     # raw_data = fetch_data(tickers, start_date, end_date)
     interest_costs_total = []
     transaction_costs_total = []
@@ -86,7 +88,13 @@ if __name__ == "__main__":
 
     # Initialize and use the BaseModel for advanced analysis
     # model = BaseModel(file_path='temp_data.csv', train_start='2013-01-01', train_end='2018-01-01', test_start='2018-01-01', test_end='2023-01-01')
-    model = LogRegModel(file_path='binance_btcusdt_1min_ccxt.csv', train_start='2024-04-14', train_end='2024-05-01', test_start='2024-05-02', test_end='2024-05-10')
+    model = LogRegModel(
+        file_path="inputs/binance_btcusdt_1min_ccxt.csv",
+        train_start="2024-04-14",
+        train_end="2024-05-01",
+        test_start="2024-05-02",
+        test_end="2024-05-10",
+    )
     model.load_preprocess_data()  # Load and preprocess the data
     model.train_test_split_time_series()  # Split data into training and testing
     model.train()  # Placeholder for training method
@@ -106,22 +114,22 @@ if __name__ == "__main__":
     # Retrieve results and output
     trading_results = trading_strategy.evaluate_performance()
 
-    trade_log = trading_results['Trade Log']
-    final_portfolio_value = trading_results['Final Portfolio Value']
-    pnl_per_trade = trading_results['Profit/Loss per Trade']
-    interest_costs = sum(trading_results['Interest Costs'])
-    transaction_costs = trading_results['Transaction Costs']
+    trade_log = trading_results["Trade Log"]
+    final_portfolio_value = trading_results["Final Portfolio Value"]
+    pnl_per_trade = trading_results["Profit/Loss per Trade"]
+    interest_costs = sum(trading_results["Interest Costs"])
+    transaction_costs = trading_results["Transaction Costs"]
     print("interest_costs111: ", interest_costs)
     print("transaction_costs111: ", transaction_costs)
 
-    interest_costs_total.append( interest_costs )
-    transaction_costs_total.append( transaction_costs )
+    interest_costs_total.append(interest_costs)
+    transaction_costs_total.append(transaction_costs)
 
     # Output
     print(trade_log)
     print("num trades: ", len(trade_log))
     print(f"Final Portfolio Value Before Cost: {final_portfolio_value}")
-    final_portfolio_value = final_portfolio_value - ( interest_costs + transaction_costs )
+    final_portfolio_value = final_portfolio_value - (interest_costs + transaction_costs)
     print(f"Final Portfolio Value After Cost: {final_portfolio_value}")
 
     # pnl_per_trade = ( final_portfolio_value - starting_cash ) / len(trade_log)
@@ -130,6 +138,3 @@ if __name__ == "__main__":
     # Collect results
     trade_logs.append(trade_log)
     final_portfolio_values.append(final_portfolio_value)
-
-
-

@@ -37,7 +37,7 @@
 #             self.line.set_data(times, prices)
 #             self.peaks_plot.set_data([times[p] for p in self.strategy.peaks], [prices[p] for p in self.strategy.peaks])
 #             self.troughs_plot.set_data([times[t] for t in self.strategy.troughs], [prices[t] for t in self.strategy.troughs])
-            
+
 #             if self.last_price is not None:
 #                 diff = prices[-1] - self.last_price
 #                 print(f"Latest BTC Price: ${prices[-1]:.2f}, {diff:.2f}")
@@ -45,15 +45,15 @@
 #                 print("Troughs: ", [times[p] for p in self.strategy.troughs], [prices[p] for p in self.strategy.troughs])
 #                 self.file.write(f"{times[-1]}: ${prices[-1]:.2f}, Change: {diff:.2f}\n")
 #                 self.file.flush()
-            
+
 #             self.last_price = prices[-1]
-            
+
 #             # Log peaks, troughs, Betti curves, and persistence norms
 #             peaks = [(times[p].strftime("%Y-%m-%d %H:%M:%S.%f"), prices[p]) for p in self.strategy.peaks]
 #             troughs = [(times[t].strftime("%Y-%m-%d %H:%M:%S.%f"), prices[t]) for t in self.strategy.troughs]
 #             # self.log_data("Peaks", peaks)
 #             # self.log_data("Troughs", troughs)
-            
+
 #             self.file.write(f"Peaks:  {peaks}\n")
 #             self.file.write(f"Troughs: {troughs}\n")
 #             self.file.flush()
@@ -77,27 +77,33 @@
 #         self.close()
 
 import datetime
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 import tkinter as tk
+
+import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib.animation import FuncAnimation
+
 
 class LivePlotter:
     def __init__(self, master, strategy):
         self.master = master
         self.strategy = strategy
         self.fig, self.ax = plt.subplots()
-        self.line, = self.ax.plot([], [], 'b-', label='BTC Price')
-        self.peaks_plot, = self.ax.plot([], [], 'r^', label='Peaks')
-        self.troughs_plot, = self.ax.plot([], [], 'gv', label='Troughs')
+        (self.line,) = self.ax.plot([], [], "b-", label="BTC Price")
+        (self.peaks_plot,) = self.ax.plot([], [], "r^", label="Peaks")
+        (self.troughs_plot,) = self.ax.plot([], [], "gv", label="Troughs")
         self.ax.legend()
         self.ax.grid(True)
-        plt.xlabel('Time')
-        plt.ylabel('Price')
-        self.ani = FuncAnimation(self.fig, self.update_plot, interval=1000, save_count=100)
-        self.data_buffer = pd.DataFrame(columns=['Timestamp', 'Price'])
+        plt.xlabel("Time")
+        plt.ylabel("Price")
+        self.ani = FuncAnimation(
+            self.fig, self.update_plot, interval=1000, save_count=100
+        )
+        self.data_buffer = pd.DataFrame(columns=["Timestamp", "Price"])
         self.data_window = 60
-        self.plot_button = tk.Button(master, text="Start Plotting", command=self.run_plot)
+        self.plot_button = tk.Button(
+            master, text="Start Plotting", command=self.run_plot
+        )
         self.plot_button.pack()
         self.last_price = None
         self.file = open("btc_peaks_troughs_log.txt", "w")
@@ -112,21 +118,29 @@ class LivePlotter:
 
         # Filter out data older than the data window
         cutoff_time = current_time - pd.Timedelta(seconds=self.data_window)
-        self.data_buffer = self.data_buffer[self.data_buffer['Timestamp'] >= cutoff_time]
+        self.data_buffer = self.data_buffer[
+            self.data_buffer["Timestamp"] >= cutoff_time
+        ]
 
         if not self.data_buffer.empty:
             # Perform analysis if there is new data
-            self.strategy.data = self.data_buffer  # Ensure strategy's data is up-to-date
+            self.strategy.data = (
+                self.data_buffer
+            )  # Ensure strategy's data is up-to-date
             self.strategy.analyze_data()
 
             # Extract times and prices for plotting
-            times = self.data_buffer['Timestamp']
-            prices = self.data_buffer['Price']
+            times = self.data_buffer["Timestamp"]
+            prices = self.data_buffer["Price"]
 
             # Update plot data
             self.line.set_data(times, prices)
-            self.peaks_plot.set_data(times[self.strategy.peaks], prices[self.strategy.peaks])
-            self.troughs_plot.set_data(times[self.strategy.troughs], prices[self.strategy.troughs])
+            self.peaks_plot.set_data(
+                times[self.strategy.peaks], prices[self.strategy.peaks]
+            )
+            self.troughs_plot.set_data(
+                times[self.strategy.troughs], prices[self.strategy.troughs]
+            )
 
             if self.last_price is not None:
                 diff = prices.iloc[-1] - self.last_price
