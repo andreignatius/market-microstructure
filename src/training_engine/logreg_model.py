@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils.class_weight import compute_class_weight
 
-from training_engine.base_model import BaseModel
+from base_model import BaseModel
 
 
 class LogRegModel(BaseModel):

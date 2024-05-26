@@ -3,8 +3,8 @@ import logging
 import joblib
 
 # from trading_strategy import TradingStrategy
-from training_engine.backtest_trading_strategy import BacktestTradingStrategy
-from training_engine.logreg_model import LogRegModel
+from backtest_trading_strategy import BacktestTradingStrategy
+from logreg_model import LogRegModel
 
 
 class ReviewEngine:
