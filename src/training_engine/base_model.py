@@ -1,12 +1,11 @@
-import pandas as pd
-from scipy.fft import fft
 import numpy as np
-from scipy.signal import find_peaks
-from sklearn.preprocessing import StandardScaler
-from pykalman import KalmanFilter
-
+import pandas as pd
 # import talib
 from hurst import compute_Hc
+from pykalman import KalmanFilter
+from scipy.fft import fft
+from scipy.signal import find_peaks
+from sklearn.preprocessing import StandardScaler
 from sklearn.utils import resample
 
 

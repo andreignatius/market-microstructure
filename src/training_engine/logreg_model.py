@@ -1,17 +1,13 @@
-import pandas as pd
+import joblib
 import numpy as np
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (accuracy_score, auc, classification_report,
+                             confusion_matrix, roc_curve)
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import (
-    classification_report,
-    confusion_matrix,
-    accuracy_score,
-    roc_curve,
-    auc,
-)
 from sklearn.utils.class_weight import compute_class_weight
-import joblib
+
 from training_engine.base_model import BaseModel
 
 

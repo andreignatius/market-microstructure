@@ -1,6 +1,6 @@
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 # Load data
 df = pd.read_csv("inputs/historical_labels.csv")

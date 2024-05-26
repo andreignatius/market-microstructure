@@ -1,9 +1,9 @@
+import hashlib
+import hmac
 import time
 from urllib.parse import urlencode
-import hmac
-import hashlib
-import requests
 
+import requests
 from rest_abstract import AbstractRESTGateway
 
 

@@ -1,6 +1,7 @@
-import websocket
-import json
 import datetime
+import json
+
+import websocket
 
 
 class MarketDataStream:

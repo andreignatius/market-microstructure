@@ -1,10 +1,10 @@
 import logging
 
-from training_engine.logreg_model import LogRegModel
+import joblib
 
 # from trading_strategy import TradingStrategy
 from training_engine.backtest_trading_strategy import BacktestTradingStrategy
-import joblib
+from training_engine.logreg_model import LogRegModel
 
 
 class ReviewEngine:

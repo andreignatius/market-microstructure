@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
-from scipy.signal import find_peaks
-from gtda.homology import VietorisRipsPersistence
 from gtda.diagrams import BettiCurve
+from gtda.homology import VietorisRipsPersistence
 from gtda.time_series import SlidingWindow
+from scipy.signal import find_peaks
 
 
 class HistoricalDataAnalyzer:

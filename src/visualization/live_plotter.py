@@ -77,10 +77,11 @@
 #         self.close()
 
 import datetime
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 import tkinter as tk
+
+import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib.animation import FuncAnimation
 
 
 class LivePlotter:

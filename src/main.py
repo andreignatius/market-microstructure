@@ -1,13 +1,14 @@
-from threading import Thread
-from queue import Queue
 import tkinter as tk
-from trading_engine.main import TradingStrategy
-from gateway.market_data_stream import MarketDataStream
-from visualization.live_plotter import LivePlotter
+from queue import Queue
+from threading import Thread
+
 from book_keeper.main import BookKeeper
 from gateway.main import TradeExecutor
+from gateway.market_data_stream import MarketDataStream
 from risk_manager.main import RiskManager
+from trading_engine.main import TradingStrategy
 from training_engine.review_engine import ReviewEngine
+from visualization.live_plotter import LivePlotter
 
 if __name__ == "__main__":
     queue = Queue()

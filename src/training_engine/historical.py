@@ -1,7 +1,8 @@
-import ccxt
-import pandas as pd
 import datetime
 import time
+
+import ccxt
+import pandas as pd
 
 # Initialize the Binance exchange
 exchange = ccxt.binance(
