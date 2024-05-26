@@ -12,7 +12,7 @@ from sklearn.metrics import (
 )
 from sklearn.utils.class_weight import compute_class_weight
 import joblib
-from base_model import BaseModel
+from training_engine.base_model import BaseModel
 
 
 class LogRegModel(BaseModel):
@@ -43,8 +43,8 @@ class LogRegModel(BaseModel):
         self.model.fit(self.X_train, self.y_train)
 
         # Save the model to a file
-        joblib.dump(self.model, "logistic_regression_model.pkl")
-        print("Model saved to logistic_regression_model.pkl")
+        joblib.dump(self.model, "outputs/logistic_regression_model.pkl")
+        print("Model saved to outputs/logistic_regression_model.pkl")
 
     def predict(self):
         # self.data['PredictedLabel'] = self.model.predict(self.scaler.transform(self.X))

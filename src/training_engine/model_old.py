@@ -72,7 +72,7 @@ class HistoricalDataAnalyzer:
         )
         return self.persistence_norms_df
 
-    def generate_labels(self, filename="historical_labels.csv"):
+    def generate_labels(self, filename="inputs/historical_labels.csv"):
         times, prices, peaks, troughs = self.analyze_data()
         print("1")
         betti_curves_df = self.compute_betti_curves()
@@ -112,7 +112,7 @@ class HistoricalDataAnalyzer:
 
 if __name__ == "__main__":
     data_file = (
-        "binance_btcusdt_1min_ccxt.csv"  # Replace with your historical data file
+        "inputs/binance_btcusdt_1min_ccxt.csv"  # Replace with your historical data file
     )
     analyzer = HistoricalDataAnalyzer(data_file)
     combined_df = analyzer.generate_labels()

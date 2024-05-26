@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 # Load data
-df = pd.read_csv("historical_labels.csv")
+df = pd.read_csv("inputs/historical_labels.csv")
 df["Timestamp"] = pd.to_datetime(df["Timestamp"])
 
 # Calculate price changes

@@ -1,9 +1,9 @@
 import logging
 
-from logreg_model import LogRegModel
+from training_engine.logreg_model import LogRegModel
 
 # from trading_strategy import TradingStrategy
-from backtest_trading_strategy import BacktestTradingStrategy
+from training_engine.backtest_trading_strategy import BacktestTradingStrategy
 import joblib
 
 
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     # Initialize and use the BaseModel for advanced analysis
     # model = BaseModel(file_path='temp_data.csv', train_start='2013-01-01', train_end='2018-01-01', test_start='2018-01-01', test_end='2023-01-01')
     model = LogRegModel(
-        file_path="binance_btcusdt_1min_ccxt.csv",
+        file_path="inputs/binance_btcusdt_1min_ccxt.csv",
         train_start="2024-04-14",
         train_end="2024-05-01",
         test_start="2024-05-02",

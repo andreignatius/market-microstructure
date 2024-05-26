@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Load data
-df = pd.read_csv("historical_labels.csv")
+df = pd.read_csv("inputs/historical_labels.csv")
 
 # Ensure the 'Timestamp' column is in datetime format
 df["Timestamp"] = pd.to_datetime(df["Timestamp"])

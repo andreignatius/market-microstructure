@@ -41,6 +41,6 @@ df = pd.DataFrame(data, columns=columns)
 df["Timestamp"] = pd.to_datetime(df["Timestamp"], unit="ms")
 
 # Save to CSV
-df.to_csv("binance_btcusdt_1min_ccxt.csv", index=False)
+df.to_csv("inputs/binance_btcusdt_1min_ccxt.csv", index=False)
 
 print("Data saved to binance_btcusdt_1min_ccxt.csv")
