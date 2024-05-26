@@ -3,8 +3,8 @@ from queue import Queue
 from threading import Thread
 
 from book_keeper.main import BookKeeper
+from gateway.data_stream import DataStream
 from gateway.main import TradeExecutor
-from gateway.market_data_stream import MarketDataStream
 from risk_manager.main import RiskManager
 from trading_engine.main import TradingStrategy
 from training_engine.review_engine import ReviewEngine
