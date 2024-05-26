@@ -3,6 +3,7 @@ from queue import Queue
 from threading import Thread
 
 from book_keeper.main import BookKeeper
+from gateway.market_data_stream import MarketDataStream
 from gateway.data_stream import DataStream
 from gateway.main import TradeExecutor
 from risk_manager.main import RiskManager
