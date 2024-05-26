@@ -8,31 +8,27 @@ class BookKeeper:
     - provides functionality for reporting and analysis
     """
 
-    def __init__(self):
-        self.open_trades = {}  # Stores trades indexed by trade ID
-        self.executed_trades = {}  # Stores trades indexed by trade ID
-        self.indicator_values = {}  # Store technical indicator values
+    def __init__(self, ticker):
+        self.ticker = ticker
+        self.current_unrealized_pnl = 0
+        self.current_realized_pnl = 0
+        self.historical_trades = {}  # Stores trades indexed by trade ID
 
-    def store_trade(self, trade):
+    @property
+    def unrealized_pnl(self):
+        return self.current_unrealized_pnl
+
+    @property
+    def realized_pnl(self):
+        return self.current_realized_pnl
+
+    def add_trade(self, trade):
         """
         Stores a new trade in the trades dictionary.
         Each trade can be a dictionary with details like trade_id, status, instrument, volume, execution_price, etc.
         """
         # TODO: Implement the method to add a trade to the trades dict
-        pass
-
-    def update_trade(self, trade_id, updates):
-        """
-        Updates specific fields of an existing trade.
-        """
-        # TODO: Implement the method to update specific details of a trade
-        pass
-
-    def remove_trade(self, trade_id):
-        """
-        Removes a trade from the record by trade ID.
-        """
-        # TODO: Implement the method to remove a trade
+        self.__update_pnl()
         pass
 
     def get_trade(self, trade_id):
@@ -56,13 +52,6 @@ class BookKeeper:
         # TODO: Implement the method to calculate P&L
         pass
 
-    def update_indicator_values(self, indicators):
-        """
-        Update the technical indicator values for analysis.
-        """
-        # TODO: Implement the method to update technical indicators
-        pass
-
     def generate_report(self, report_type):
         """
         Generate various types of reports (e.g., performance, compliance, risk management).
@@ -77,16 +66,12 @@ class BookKeeper:
         # TODO: Implement data export functionality
         pass
 
-    def check_compliance(self):
-        """
-        Check for compliance with trading limits and risk management parameters.
-        """
-        # TODO: Implement the compliance check logic
-        pass
-
     def synchronize_with_risk_manager(self, risk_manager):
         """
         Synchronize with the RiskManager to update trading limits and risk metrics.
         """
         # TODO: Implement synchronization with RiskManager
+        pass
+
+    def __update_pnl(self):
         pass
