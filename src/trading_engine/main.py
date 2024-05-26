@@ -7,6 +7,7 @@ import pywt
 from gtda.diagrams import BettiCurve
 from gtda.homology import VietorisRipsPersistence
 from gtda.time_series import SlidingWindow
+
 # import talib
 from hurst import compute_Hc
 from pykalman import KalmanFilter
