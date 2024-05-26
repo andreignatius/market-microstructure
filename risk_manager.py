@@ -1,8 +1,9 @@
 class RiskManager:
-    '''
+    """
     - monitors PnL / MTM and the greeks and updates VaR / ES values
     - interacts w Strategy engine to trigger stop losses where applicable
-    '''
+    """
+
     def __init__(self, book_keeper):
         self.book_keeper = book_keeper
         self.risk_metrics = {}
@@ -84,5 +85,3 @@ class RiskManager:
         """
         # TODO: Implement the logic to execute stop-loss orders based on risk parameters
         pass
-
-        

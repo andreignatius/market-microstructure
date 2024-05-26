@@ -14,15 +14,15 @@ if __name__ == "__main__":
     strategy = TradingStrategy(queue)
     root = tk.Tk()
     plotter = LivePlotter(root, strategy)
-    
+
     data_stream = MarketDataStream(queue)
     data_thread = Thread(target=data_stream.fetch_data, daemon=True)
     data_thread.start()
 
     # hypothetical usage of classes
-	# book_keeper = BookKeeper()
-	# trade_executor = TradeExecutor(book_keeper)
-	# risk_manager = RiskManager(book_keeper)
-	# review_engine = ReviewEngine(model)
+    # book_keeper = BookKeeper()
+    # trade_executor = TradeExecutor(book_keeper)
+    # risk_manager = RiskManager(book_keeper)
+    # review_engine = ReviewEngine(model)
 
     root.mainloop()

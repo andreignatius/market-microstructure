@@ -1,9 +1,10 @@
 class TradeExecutor:
-    '''
+    """
     - acts as the interface between TradingStrategy decisions and Binance exchange
     - perfoming trades based on other factors like account balance from BookKeeper
     - observing risk limits from RiskManager class
-    '''
+    """
+
     def __init__(self, book_keeper, risk_manager):
         self.book_keeper = book_keeper
         self.risk_manager = risk_manager

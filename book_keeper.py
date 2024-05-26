@@ -1,15 +1,16 @@
 class BookKeeper:
-    ''' 
-    - stores all open trades and executed trades as well as technical indicator values 
+    """
+    - stores all open trades and executed trades as well as technical indicator values
       surrounding trade at the time of execution
     - will interact with ML modeling in ReviewEngine class for review to assess effectiveness
       and for parameter tuning where applicable
     - will interact with UI LivePlotter for user to monitor MTM / PnL on demand
     - provides functionality for reporting and analysis
-    '''
+    """
+
     def __init__(self):
-        self.open_trades = {}       # Stores trades indexed by trade ID
-        self.executed_trades = {}   # Stores trades indexed by trade ID
+        self.open_trades = {}  # Stores trades indexed by trade ID
+        self.executed_trades = {}  # Stores trades indexed by trade ID
         self.indicator_values = {}  # Store technical indicator values
 
     def store_trade(self, trade):
@@ -69,7 +70,7 @@ class BookKeeper:
         # TODO: Implement the method to generate specific types of reports
         pass
 
-    def export_data(self, format_type='csv'):
+    def export_data(self, format_type="csv"):
         """
         Export the trades and indicators to a file in a specified format, such as CSV or JSON.
         """
