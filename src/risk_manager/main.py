@@ -48,12 +48,18 @@ class RiskManager:
 
                 # 1. check action buy or sell
                 if self.signal_to_process["buy"]:
-                    print("check inventory, maybe self.book_keeper.")
+                    print("check inventory, maybe self.book_keeper.get_positions")
+                    # 1. what is our order size? 2% rule?
+                    # 2. w.r.t to #1, do we have enough money
+
                 elif self.signal_to_process["sell"]:
                     print("short allowed? If not the block if no inventory")
+                    # 1. what is our inventory? if no inventory then block sale
+                    # 2. sell whole position or fraction of position?
+
                 else:
                     print("do nothing")
-                # 2. check amount
+
             else:
                 print("There is no signal to work with !")
         else:
@@ -97,6 +103,8 @@ class RiskManager:
     def monitor_pnl(self):
         """
         Continuously monitor profit and loss of the trading portfolio to identify trends and outliers.
+
+        This may need to be async
         """
         # TODO: Implement the logic to calculate and monitor P&L
         pass
