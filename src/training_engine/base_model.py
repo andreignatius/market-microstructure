@@ -53,14 +53,14 @@ class BaseModel:
         self.perform_fourier_transform_analysis()
         self.calculate_stochastic_oscillator()
         self.calculate_slow_stochastic_oscillator()
-        # self.construct_kalman_filter()
+        self.construct_kalman_filter()
         self.detect_rolling_peaks_and_troughs()
 
         self.calculate_moving_averages_and_rsi()
 
         # self.estimate_hurst_exponent()
         self.calculate_days_since_peaks_and_troughs()
-        self.detect_fourier_signals()
+        # self.detect_fourier_signals()
         self.calculate_first_second_order_derivatives()
 
         self.preprocess_data()
@@ -94,7 +94,7 @@ class BaseModel:
 
         # Replace NaN values with the mean
         close_prices[np.isnan(close_prices)] = mean_value
-        
+
         print("close_prices12345: ", close_prices)
         N = len(close_prices)
         T = 1.0  # 1 day
@@ -102,7 +102,7 @@ class BaseModel:
         fft_freq = np.fft.fftfreq(N, T)
         positive_frequencies = fft_freq[: N // 2]
         positive_fft_values = 2.0 / N * np.abs(close_fft[0 : N // 2])
-        amplitude_threshold = 0.1  # This can be adjusted
+        amplitude_threshold = 1.0  # This can be adjusted
         significant_peaks, _ = find_peaks(
             positive_fft_values, height=amplitude_threshold
         )
@@ -160,13 +160,14 @@ class BaseModel:
 
     def detect_fourier_signals(self):
         # Add in fourier transform
-        print("check fft_features: ", self.fft_features)
+        print("check fft_features: ", self.fft_features[:30])
         dominant_period_lengths = sorted(
-            set((self.fft_features.loc[:10, "SecondsPerCycle"].values / 2).astype(int)),
+            set((self.fft_features.loc[:, "SecondsPerCycle"].values / 2).astype(int)),
             reverse=True,
         )
-        dominant_period_lengths = [i for i in dominant_period_lengths if i < 30]
-        dominant_period_lengths = dominant_period_lengths[:5]
+        dominant_period_lengths = [i for i in dominant_period_lengths if i < 15]
+        # dominant_period_lengths = dominant_period_lengths[:5]
+        dominant_period_lengths = [15, 7, 5]
         print("check dominant_period_lengths: ", dominant_period_lengths)
         self.data["FourierSignalSell"] = self.data["MinutesSinceTrough"].isin(
             dominant_period_lengths
@@ -345,8 +346,7 @@ class BaseModel:
 
     def calculate_first_second_order_derivatives(self):
         # Calculate first and second order derivatives for selected features
-        # for feature in ["KalmanFilterEst", "Short_Moving_Avg", "Long_Moving_Avg"]:
-        for feature in ["Short_Moving_Avg"]:
+        for feature in ["KalmanFilterEst", "Short_Moving_Avg", "Long_Moving_Avg"]:
             self.data[f"{feature}_1st_Deriv"] = self.data[feature].diff() * 100
             self.data[f"{feature}_2nd_Deriv"] = (
                 self.data[f"{feature}_1st_Deriv"].diff() * 100
@@ -433,21 +433,21 @@ class BaseModel:
             "Short_Moving_Avg_1st_Deriv",
             "Short_Moving_Avg_2nd_Deriv",
             # 'Long_Moving_Avg',
-            # "Long_Moving_Avg_1st_Deriv",
-            # "Long_Moving_Avg_2nd_Deriv",
+            "Long_Moving_Avg_1st_Deriv",
+            "Long_Moving_Avg_2nd_Deriv",
             # 'RSI',
             # 'Bollinger_PercentB',
             "MinutesSincePeak",
             "MinutesSinceTrough",
-            "FourierSignalSell",
-            "FourierSignalBuy",
+            # "FourierSignalSell",
+            # "FourierSignalBuy",
             "%K",
             "%D",
             # 'Slow %K',
             # 'Slow %D',
             # 'KalmanFilterEst',
-            # "KalmanFilterEst_1st_Deriv",
-            # "KalmanFilterEst_2nd_Deriv",
+            "KalmanFilterEst_1st_Deriv",
+            "KalmanFilterEst_2nd_Deriv",
             # 'HurstExponent',
             # 'Interest_Rate_Difference',
             # 'Interest_Rate_Difference_Change',
