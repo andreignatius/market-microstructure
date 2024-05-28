@@ -16,11 +16,14 @@ from scipy.signal import find_peaks
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import resample
 
+import os
+
 
 class TradingStrategy:
     def __init__(self, queue):
         self.queue = queue
         self.data = pd.DataFrame(columns=["Timestamp", "Price"])
+        self.file_path = "ohlc_minutes_new.csv"
         self.peaks = []
         self.troughs = []
         self.smoothed_prices = []
@@ -44,92 +47,79 @@ class TradingStrategy:
                 self.data = new_data
             if "Timestamp" not in self.data.index.names:
                 self.data.set_index("Timestamp", inplace=True, drop=False)
+        print("self.data111: ", self.data.head())
+        print("len: ", len(self.data))
         return self.data
 
-    # def smooth_with_wavelets(self, y):
-    #     coeffs = pywt.wavedec(y, 'sym5', mode='symmetric')
-    #     for i in range(5):
-    #         coeffs[i + 5] = np.zeros(coeffs[i + 5].shape)
-    #     y_rec = pywt.waverec(coeffs, 'sym5', mode='symmetric')[1:]
-    #     return y_rec
+    def aggregate_data(self):
+        if self.data.empty:
+            return
 
-    # def smooth_with_wavelets(self, y, wavelet='sym5', level=5):
-    #     # Perform wavelet decomposition
-    #     coeffs = pywt.wavedec(y, wavelet, mode='symmetric')
+        if 'Timestamp' not in self.data.index.names:
+            self.data.set_index('Timestamp', inplace=True)
 
-    #     # Ensure the level does not exceed the number of coefficient arrays
-    #     num_coeffs = len(coeffs)
-    #     if level >= num_coeffs:
-    #         level = num_coeffs - 1
+        # Resample the data by minute and compute OHLC
+        ohlc = self.data['Price'].resample('T').ohlc()
 
-    #     # Zero out the specified number of detail coefficients
-    #     for i in range(level, num_coeffs):
-    #         coeffs[i] = np.zeros_like(coeffs[i])
+        # Capitalize the column headers
+        ohlc.columns = [col.capitalize() for col in ohlc.columns]
 
-    #     # Perform wavelet reconstruction
-    #     y_rec = pywt.waverec(coeffs, wavelet, mode='symmetric')
+        # # Check if file exists to handle headers
+        # file_exists = os.path.exists('ohlc_minutes_new.csv')
 
-    #     # Return the reconstructed signal, trimmed to match original length
-    #     return y_rec[:len(y)]
+        # # Append or update the CSV file instead of rewriting it entirely
+        # ohlc.to_csv('ohlc_minutes.csv', mode='a', header=not file_exists)
+        ohlc.to_csv('ohlc_minutes_new.csv')
 
-    def smooth_with_wavelets(self, y, wavelet="sym5", level=5):
-        # Perform wavelet decomposition
-        coeffs = pywt.wavedec(y, wavelet, mode="symmetric")
+        # Display the resulting OHLC values
+        print("OHLC data: ", ohlc)
 
-        # Ensure the level does not exceed the number of coefficient arrays
-        num_coeffs = len(coeffs)
-        if level >= num_coeffs:
-            level = num_coeffs - 1
 
-        # Zero out the specified number of detail coefficients
-        for i in range(level, num_coeffs):
-            coeffs[i] = np.zeros_like(coeffs[i])
+    def analyze_data(self):
+        self.data = pd.read_csv(self.file_path)
+        self.data["Date"] = pd.to_datetime(self.data["Timestamp"])
+        self.data.bfill(inplace=True)
+        self.calculate_daily_percentage_change()
 
-        # Perform wavelet reconstruction
-        y_rec = pywt.waverec(coeffs, wavelet, mode="symmetric")
+        self.perform_fourier_transform_analysis()
+        self.calculate_stochastic_oscillator()
+        self.calculate_slow_stochastic_oscillator()
+        self.construct_kalman_filter()
+        self.detect_rolling_peaks_and_troughs()
 
-        # Return the reconstructed signal as a Series to maintain compatibility with pandas operations
-        return pd.Series(y_rec[: len(y)], index=y.index)
+        self.calculate_moving_averages_and_rsi()
 
-    # feature_set = [
-    #          # 'Short_Moving_Avg',
-    #          # 'Short_Moving_Avg_1st_Deriv',
-    #          'Short_Moving_Avg_2nd_Deriv',
-    #          # 'Long_Moving_Avg',
-    #          # 'Long_Moving_Avg_1st_Deriv',
-    #          'Long_Moving_Avg_2nd_Deriv',
-    #          'RSI',
-    #          # 'Bollinger_PercentB',
-    #          'MinutesSincePeak',
-    #          'MinutesSinceTrough',
-    #          'FourierSignalSell',
-    #          'FourierSignalBuy',
-    #          '%K',
-    #          '%D',
-    #          'Slow %K',
-    #          'Slow %D',
-    #          # 'KalmanFilterEst',
-    #          'KalmanFilterEst_1st_Deriv',
-    #          'KalmanFilterEst_2nd_Deriv',
-    #          # 'HurstExponent',
-    #          # 'Interest_Rate_Difference',
-    #          # 'Interest_Rate_Difference_Change',
-    #          # 'Currency_Account_difference'
-    #         ]
-    #     self.X_train = self.train_data[
-    #         feature_set
-    #     ]
+        # self.estimate_hurst_exponent()
+        self.calculate_days_since_peaks_and_troughs()
+        self.detect_fourier_signals()
+        self.calculate_first_second_order_derivatives()
 
-    #     # ].iloc[:self.split_idx]
-    #     self.X_test = self.test_data[
-    #         feature_set
-    #     ]
+        # self.preprocess_data()
+        self.predict()
+
+    def calculate_daily_percentage_change(self):
+        self.data["Daily_Change"] = self.data["Close"].pct_change() * 100
+        self.data["Daily_Change_Open_to_Close"] = (
+            (self.data["Open"] - self.data["Close"].shift(1))
+            / self.data["Close"].shift(1)
+        ) * 100
 
     def perform_fourier_transform_analysis(self):
         # Fourier Transform Analysis
-        # close_prices = self.smoothed_prices.to_numpy()
+        # close_prices = self.data['Close'].to_numpy()
+        # print("check000: ", type(self.train_end - pd.DateOffset(months=12)))
+        # print("check111: ", type(self.train_end))
+        # print("check222: ", self.data["Date"])
+        # d1 = self.train_end - pd.DateOffset(days=14)
+        # d2 = self.train_end
 
-        close_prices = self.smoothed_prices.to_numpy()
+        # data_window = self.data[
+        #     (self.data["Date"] >= d1) & (self.data["Date"] < d2)
+        # ].copy()
+        # print("data_window: ", data_window)
+        data_window = self.data
+
+        close_prices = data_window["Close"].to_numpy()
         # print("close_prices: ", close_prices)
         N = len(close_prices)
         T = 1.0  # 1 day
@@ -152,6 +142,47 @@ class TradingStrategy:
             }
         )
 
+    def calculate_stochastic_oscillator(self, k_window=14, d_window=3, slow_k_window=3):
+        """
+        Calculate the Stochastic Oscillator.
+        %K = (Current Close - Lowest Low)/(Highest High - Lowest Low) * 100
+        %D = 3-day SMA of %K
+
+        Where:
+        - Lowest Low = lowest low for the look-back period
+        - Highest High = highest high for the look-back period
+        - %K is multiplied by 100 to move the decimal point two places
+
+        The result is two time series: %K and %D
+        """
+        # Calculate %K
+        low_min = self.data["Low"].rolling(window=k_window).min()
+        high_max = self.data["High"].rolling(window=k_window).max()
+        self.data["%K"] = 100 * (self.data["Close"] - low_min) / (high_max - low_min)
+
+        # Calculate %D as the moving average of %K
+        self.data["%D"] = self.data["%K"].rolling(window=d_window).mean()
+
+        # Handle any NaN values that may have been created
+        self.data["%K"].bfill(inplace=True)
+        self.data["%D"].bfill(inplace=True)
+
+    def calculate_slow_stochastic_oscillator(self, d_window=3, slow_k_window=3):
+        """
+        Calculate the Slow Stochastic Oscillator.
+        Slow %K = 3-period SMA of %K
+        Slow %D = 3-day SMA of Slow %K
+        """
+        # Calculate Slow %K, which is the moving average of %K
+        self.data["Slow %K"] = self.data["%K"].rolling(window=slow_k_window).mean()
+
+        # Calculate Slow %D, which is the moving average of Slow %K
+        self.data["Slow %D"] = self.data["Slow %K"].rolling(window=d_window).mean()
+
+        # Handle any NaN values
+        self.data["Slow %K"].bfill(inplace=True)
+        self.data["Slow %D"].bfill(inplace=True)
+
     def detect_fourier_signals(self):
         # Add in fourier transform
         print("check fft_features: ", self.fft_features)
@@ -160,7 +191,7 @@ class TradingStrategy:
             reverse=True,
         )
         dominant_period_lengths = [i for i in dominant_period_lengths if i < 30]
-        dominant_period_lengths = dominant_period_lengths[:5]
+        dominant_period_lengths = dominant_period_lengths[:1]
         print("check dominant_period_lengths: ", dominant_period_lengths)
         self.data["FourierSignalSell"] = self.data["MinutesSinceTrough"].isin(
             dominant_period_lengths
@@ -173,77 +204,44 @@ class TradingStrategy:
         print("FourierSignalSell: ", self.data["FourierSignalSell"])
         print("FourierSignalBuy: ", self.data["FourierSignalBuy"])
 
-    # def detect_rolling_peaks_and_troughs(self, window_size=5):
-    #     print("checking self.data: ", self.data)
-    #     # Initialize columns to store the results
-    #     self.data['isLocalPeak'] = False
-    #     self.data['isLocalTrough'] = False
-
-    #     # Iterate through the DataFrame using a rolling window
-    #     for end_idx in range(window_size, len(self.data)):
-    #         start_idx = max(0, end_idx - window_size)
-
-    #         # Subset the data for the current window
-    #         window_data = self.smoothed_prices[start_idx:end_idx]
-
-    #         # Find peaks
-    #         peaks, _ = find_peaks(window_data)
-    #         peaks_global_indices = [start_idx + p for p in peaks]
-    #         # print("peaks: ", peaks)
-    #         self.data.loc[peaks_global_indices, 'isLocalPeak'] = True
-
-    #         # Find troughs by inverting the data
-    #         troughs, _ = find_peaks(-window_data)
-    #         troughs_global_indices = [start_idx + t for t in troughs]
-    #         # print("troughs: ", troughs)
-    #         self.data.loc[troughs_global_indices, 'isLocalTrough'] = True
-
-    #     # Assign labels based on peaks and troughs
-    #     self.data['Label'] = 'Hold'  # Default label
-    #     self.data.loc[self.data['isLocalPeak'], 'Label'] = 'Sell'
-    #     self.data.loc[self.data['isLocalTrough'], 'Label'] = 'Buy'
-
     def detect_rolling_peaks_and_troughs(self, window_size=5):
-        # print("checking self.data: ", self.data)
-        # Reset index to ensure numerical indexing works, save the old index if needed
-        old_index = self.data.index
-        self.data.reset_index(drop=True, inplace=True)
-
         # Initialize columns to store the results
         self.data["isLocalPeak"] = False
         self.data["isLocalTrough"] = False
-
-        # Convert 'Price' column to a numpy array for processing
-        prices = self.data["Price"].to_numpy()
 
         # Iterate through the DataFrame using a rolling window
         for end_idx in range(window_size, len(self.data)):
             start_idx = max(0, end_idx - window_size)
 
             # Subset the data for the current window
-            window_data = prices[start_idx:end_idx]
+            window_data = self.data["Close"][start_idx:end_idx]
 
             # Find peaks
             peaks, _ = find_peaks(window_data)
             peaks_global_indices = [start_idx + p for p in peaks]
+            # print("peaks: ", peaks)
             self.data.loc[peaks_global_indices, "isLocalPeak"] = True
+            print("peaks_global_indices: ", peaks_global_indices)
 
             # Find troughs by inverting the data
             troughs, _ = find_peaks(-window_data)
             troughs_global_indices = [start_idx + t for t in troughs]
+            # print("troughs: ", troughs)
             self.data.loc[troughs_global_indices, "isLocalTrough"] = True
+            print("troughs_global_indices: ", troughs_global_indices)
 
-        # Optionally restore the original index if needed
-        self.data.set_index(old_index, inplace=True)
+        print("CHECK LOCAL PEAK: ", self.data["isLocalPeak"])
+        print("CHECK LOCAL TROUGH: ", self.data["isLocalTrough"])
         # Assign labels based on peaks and troughs
         self.data["Label"] = "Hold"  # Default label
         self.data.loc[self.data["isLocalPeak"], "Label"] = "Sell"
         self.data.loc[self.data["isLocalTrough"], "Label"] = "Buy"
+        print("CHECK LABEL: ", self.data["Label"])
 
     # Calculating Moving Averages and RSI manually
     def calculate_rsi(self, window=14):
         """Calculate the Relative Strength Index (RSI) for a given dataset and window"""
-        delta = self.smoothed_prices.diff()
+        delta = self.data["Close"].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
 
@@ -252,18 +250,82 @@ class TradingStrategy:
         return rsi
 
     def calculate_moving_averages_and_rsi(self):
-        if self.data.index.duplicated().any():
-            self.data.reset_index(drop=True, inplace=True)
         short_window = 5
         long_window = 20
         rsi_period = 14
-        self.data["Short_Moving_Avg"] = self.smoothed_prices.rolling(
-            window=short_window
-        ).mean()
-        self.data["Long_Moving_Avg"] = self.smoothed_prices.rolling(
-            window=long_window
-        ).mean()
+        self.data["Short_Moving_Avg"] = (
+            self.data["Close"].rolling(window=short_window).mean()
+        )
+        self.data["Long_Moving_Avg"] = (
+            self.data["Close"].rolling(window=long_window).mean()
+        )
         self.data["RSI"] = self.calculate_rsi(window=rsi_period)
+
+    # Bollinger Bands
+    def calculate_bollinger_bands(self):
+        (
+            self.data["BBand_Upper"],
+            self.data["BBand_Middle"],
+            self.data["BBand_Lower"],
+        ) = talib.BBANDS(self.data["Close"], timeperiod=20)
+
+    # Bollinger Bandwidth
+    def calculate_bollinger_bandwidth(self):
+        self.data["Bollinger_Bandwidth"] = (
+            self.data["BBand_Upper"] - self.data["BBand_Lower"]
+        ) / self.data["BBand_Middle"]
+
+    # Bollinger %B
+    def calculate_bollinger_percent_b(self):
+        self.data["Bollinger_PercentB"] = (
+            self.data["Close"] - self.data["BBand_Lower"]
+        ) / (self.data["BBand_Upper"] - self.data["BBand_Lower"])
+
+    def construct_kalman_filter(self):
+        close_prices = self.data["Close"]
+        # Construct a Kalman Filter
+        kf = KalmanFilter(initial_state_mean=0, n_dim_obs=1)
+
+        # Use the observed data (close prices) to estimate the state
+        state_means, _ = kf.filter(close_prices.values)
+
+        # Convert state means to a Pandas Series for easy plotting
+        kalman_estimates = pd.Series(state_means.flatten(), index=self.data.index)
+
+        # Combine the original close prices and Kalman Filter estimates
+        kalman_estimates = pd.DataFrame({"KalmanFilterEst": kalman_estimates})
+        self.data = self.data.join(kalman_estimates)
+
+        # print('KalmanFilterEst: ', self.data['KalmanFilterEst'])  # Display the first few rows of the dataframe
+
+    # Function to estimate Hurst exponent over multiple sliding windows
+    def estimate_hurst_exponent(self, window_size=100, step_size=1):
+        """
+        Calculates the Hurst exponent over sliding windows and appends the results to the DataFrame.
+
+        :param window_size: Size of each sliding window.
+        :param step_size: Step size for moving the window.
+        """
+        # Prepare an empty list to store Hurst exponent results and corresponding dates
+        hurst_exponents = []
+
+        for i in range(0, len(self.data) - window_size + 1, step_size):
+            # Extract the window
+            window = self.data["Close"].iloc[i : i + window_size]
+
+            # Calculate the Hurst exponent
+            H, _, _ = compute_Hc(window, kind="price", simplified=True)
+
+            # Store the result along with the starting date of the window
+            hurst_exponents.append(
+                {"Date": self.data["Date"].iloc[i], "HurstExponent": H}
+            )
+
+        # Convert the results list into a DataFrame
+        hurst_exponents = pd.DataFrame(hurst_exponents)
+
+        # Combine the original DataFrame and Hurst exponent estimates
+        self.data = self.data.merge(hurst_exponents, on="Date", how="left")
 
     def calculate_days_since_peaks_and_troughs(self):
         self.data["MinutesSincePeak"] = 0
@@ -279,9 +341,9 @@ class TradingStrategy:
         price_change_since_peak = 0
 
         for index, row in self.data.iterrows():
-            # print("rowwwww: ", row)
-            current_price = row["Price"]
-            today_date = pd.to_datetime(row["Timestamp"])
+            current_price = row["Open"]
+
+            today_date = pd.to_datetime(row["Date"])
 
             if row["Label"] == "Buy":
                 checkpoint_date_bottom = today_date
@@ -289,14 +351,20 @@ class TradingStrategy:
             if row["Label"] == "Sell":
                 checkpoint_date_top = today_date
                 checkpoint_price_top = current_price
-
+            if checkpoint_date_bottom:
+                print("CHECK TIMEDELTA: ", (today_date - checkpoint_date_bottom))
             days_since_bottom = (
-                (today_date - checkpoint_date_bottom).days
+                (today_date - checkpoint_date_bottom).seconds // 60
                 if checkpoint_date_bottom
                 else 0
             )
+            print("current_price: ", current_price)
+            print("checkpoint_date_top: ", checkpoint_date_top)
+            print("checkpoint_price_top: ", checkpoint_price_top)
+            print("checkpoint_date_bottom: ", checkpoint_date_bottom)
+            print("checkpoint_price_bottom: ", checkpoint_price_bottom)
             days_since_peak = (
-                (today_date - checkpoint_date_top).days if checkpoint_date_top else 0
+                (today_date - checkpoint_date_top).seconds // 60 if checkpoint_date_top else 0
             )
 
             if checkpoint_price_bottom is not None:
@@ -311,81 +379,13 @@ class TradingStrategy:
             # self.data.at[index, 'FourierSignalBuy'] = ( (days_since_bottom % 6 == 0) or (days_since_bottom % 7 == 0) )
             self.data.at[index, "PriceChangeSincePeak"] = price_change_since_peak
             self.data.at[index, "PriceChangeSinceTrough"] = price_change_since_bottom
-
-    # def construct_kalman_filter(self):
-    #     close_prices = self.smoothed_prices
-    #     # Construct a Kalman Filter
-    #     kf = KalmanFilter(initial_state_mean=0, n_dim_obs=1)
-
-    #     # Use the observed data (close prices) to estimate the state
-    #     state_means, _ = kf.filter(close_prices)
-
-    #     # Convert state means to a Pandas Series for easy plotting
-    #     kalman_estimates = pd.Series(
-    #         state_means.flatten(), index=self.data.index)
-
-    #     # Combine the original close prices and Kalman Filter estimates
-    #     kalman_estimates = pd.DataFrame({
-    #         'KalmanFilterEst': kalman_estimates
-    #     })
-    #     self.data = self.data.join(kalman_estimates)
-
-    #     # print('KalmanFilterEst: ', self.data['KalmanFilterEst'])  # Display the first few rows of the dataframe
-
-    # def construct_kalman_filter(self):
-    #     close_prices = self.smoothed_prices
-
-    #     # Assuming close_prices is a numpy array or a list; otherwise, convert appropriately
-    #     if isinstance(close_prices, list):
-    #         close_prices = np.array(close_prices)
-
-    #     # Construct a Kalman Filter
-    #     kf = KalmanFilter(initial_state_mean=0, n_dim_obs=1)
-
-    #     # Use the observed data (close prices) to estimate the state
-    #     state_means, _ = kf.filter(close_prices)
-
-    #     # If you don't have timestamps or other index data, create a range index
-    #     index = pd.RangeIndex(start=0, stop=len(state_means), step=1)
-
-    #     # Convert state means to a Pandas DataFrame for easy handling or plotting
-    #     kalman_estimates = pd.DataFrame({
-    #         'KalmanFilterEst': state_means.flatten()
-    #     }, index=index)
-
-    #     self.data = self.data.join(kalman_estimates)
-
-    # TODO fix
-    def construct_kalman_filter(self):
-        close_prices = self.smoothed_prices
-
-        # Assuming close_prices is a numpy array or a list; otherwise, convert appropriately
-        if isinstance(close_prices, list):
-            close_prices = np.array(close_prices)
-
-        # Construct a Kalman Filter
-        kf = KalmanFilter(initial_state_mean=0, n_dim_obs=1)
-
-        # Use the observed data (close prices) to estimate the state
-        state_means, _ = kf.filter(close_prices)
-
-        # Match the index with the main data if timestamps are needed
-        if not self.data.empty:
-            index = self.data.index
-        else:
-            index = pd.RangeIndex(start=0, stop=len(state_means), step=1)
-
-        # Convert state means to a Pandas DataFrame for easy handling or plotting
-        kalman_estimates = pd.DataFrame(
-            {"KalmanFilterEst": state_means.flatten()}, index=index
-        )
-
-        self.data = self.data.join(kalman_estimates, how="outer")
+            print("MINUTESSINCEPEAK:", self.data["MinutesSincePeak"])
+            print("MinutesSinceTrough: ", self.data["MinutesSinceTrough"])
 
     def calculate_first_second_order_derivatives(self):
         # Calculate first and second order derivatives for selected features
-        # for feature in ['KalmanFilterEst', 'Short_Moving_Avg', 'Long_Moving_Avg']:
-        for feature in ["Short_Moving_Avg", "Long_Moving_Avg"]:
+        # for feature in ["KalmanFilterEst", "Short_Moving_Avg", "Long_Moving_Avg"]:
+        for feature in ["KalmanFilterEst", "Short_Moving_Avg"]:
             self.data[f"{feature}_1st_Deriv"] = self.data[feature].diff() * 100
             self.data[f"{feature}_2nd_Deriv"] = (
                 self.data[f"{feature}_1st_Deriv"].diff() * 100
@@ -394,75 +394,150 @@ class TradingStrategy:
         # Fill NaN values that were generated by diff()
         self.data.bfill(inplace=True)
 
-    def analyze_data(self):
-        # Ensure there's data to analyze
-        if not self.data.empty:
-            # Directly access the 'Timestamp' and 'Price' columns
-            times = self.data["Timestamp"]
-            prices = self.data["Price"]
+    def preprocess_data(self):
+        self.data.dropna(inplace=True)
 
-            # Example analysis logic
-            # Here you would perform your actual analysis, such as smoothing, peak detection, etc.
-            # Update self.peaks and self.troughs as per the results of your analysis
-            # For example:
-            self.smoothed_prices = self.smooth_with_wavelets(prices)
-            self.smoothed_prices = self.smoothed_prices[:100]
-            print("smoothed_prices: ", self.smoothed_prices)
-            self.perform_fourier_transform_analysis()
-            self.detect_rolling_peaks_and_troughs()
-            # times, prices = zip(*self.data)
-            # times = [t.timestamp() for t in times]
+    def train_test_split_time_series(self):
+        # Convert 'Date' column to datetime if it's not already
+        # self.data['Date'] = pd.to_datetime(self.data['Date'])
 
-            # # Smooth the price data
-            # self.smoothed_prices = self.smooth_with_wavelets(prices)
-            self.perform_fourier_transform_analysis()
-            # self.construct_kalman_filter()
-            self.detect_rolling_peaks_and_troughs()
+        # # Filter the data for training and testing periods
+        # train_data = self.data[(self.data['Date'] >= self.train_start) & (self.data['Date'] < self.train_end)]
+        # test_data = self.data[(self.data['Date'] >= self.test_start) & (self.data['Date'] < self.test_end)]
 
-            # self.calculate_moving_averages_and_rsi()
+        # Sort the data by date to ensure correct time sequence
+        self.data.sort_values("Date", inplace=True)
 
-            # self.estimate_hurst_exponent()
-            self.calculate_days_since_peaks_and_troughs()
-            self.detect_fourier_signals()
-            # self.calculate_first_second_order_derivatives()
+        # Find the split point
+        # self.split_idx = int(len(self.data) * (1 - test_size))
+        self.data.to_csv("final_dataset_with_new_features.csv")
+        # Split the data without shuffling
 
-            min_height = np.std(self.smoothed_prices)
-            min_distance = 10
-            prominence = min_height * 0.25
+        # # Filter the data for training and testing periods
+        # self.train_data = self.data[(self.data['Date'] >= self.train_start) & (self.data['Date'] < self.train_end)]
+        # self.test_data  = self.data[(self.data['Date'] >= self.test_start) & (self.data['Date'] < self.test_end)]
 
-            peaks, _ = find_peaks(
-                self.smoothed_prices, distance=min_distance, prominence=prominence
-            )
-            neg_prices = -np.array(self.smoothed_prices)
-            troughs, _ = find_peaks(
-                neg_prices, distance=min_distance, prominence=prominence
-            )
+        # Filter the data for training and testing periods and create copies
+        self.train_data = self.data[
+            (self.data["Date"] >= self.train_start)
+            & (self.data["Date"] < self.train_end)
+        ].copy()
+        self.test_data = self.data[
+            (self.data["Date"] >= self.test_start) & (self.data["Date"] < self.test_end)
+        ].copy()
 
-            # self.peaks, self.troughs = peaks, troughs
+        # # let's avoid age sampling / filtering for time being
+        # # Calculate the age of each data point in days
+        # current_date = self.train_end
+        # self.train_data['DataAge'] = (current_date - self.train_data['Date']).dt.days
 
-        # feature_set = [
-        #     peaks,
-        #     troughs
-        # ]
-        # self.model.predict(feature_set)
+        # # Apply exponential decay to calculate weights
+        # decay_rate = 0.05  # This is a parameter you can tune
+        # self.train_data['Weight'] = np.exp(-decay_rate * self.train_data['DataAge'])
 
-        # return times, prices, peaks, troughs
-        return times, self.smoothed_prices, peaks, troughs
+        # # Now sample from training data with these weights
+        # sample_size = min(len(self.train_data), 1500)
+        # self.train_data = self.train_data.sample(n=sample_size, replace=False, weights=self.train_data['Weight'])
 
-    def reference_model(self):
-        raw_data.to_csv("temp_data.csv")
+        self.train_data.sort_values("Date", inplace=True)
+        self.train_data.to_csv("inspect_training_set.csv")
+        self.test_data.to_csv("inspect_testing_set.csv")
 
-        # Initialize and use the BaseModel for advanced analysis
-        # model = BaseModel(file_path='temp_data.csv', train_start='2013-01-01', train_end='2018-01-01', test_start='2018-01-01', test_end='2023-01-01')
-        model = LogRegModel(
-            file_path="temp_data.csv",
-            train_start="2013-01-01",
-            train_end="2018-01-01",
-            test_start="2018-01-01",
-            test_end="2023-01-01",
-        )
-        model.load_preprocess_data()  # Load and preprocess the data
-        model.train_test_split_time_series()  # Split data into training and testing
-        model.train()  # Placeholder for training method
+        # num trades:  6420
+        # Final Portfolio Value Before Cost: 10987.401457466523
+        # Final Portfolio Value After Cost: 10987.401457466523
+        # PnL per trade:  0.1538008500726672
 
-        data = model.retrieve_test_set()
+        # num trades:  6420
+        # Final Portfolio Value Before Cost: 10987.401457466523
+        # Final Portfolio Value After Cost: 10987.401457466523
+        # PnL per trade:  0.1538008500726672
+
+        feature_set = [
+            # 'Short_Moving_Avg',
+            "Short_Moving_Avg_1st_Deriv",
+            "Short_Moving_Avg_2nd_Deriv",
+            # 'Long_Moving_Avg',
+            # "Long_Moving_Avg_1st_Deriv",
+            # "Long_Moving_Avg_2nd_Deriv",
+            # 'RSI',
+            # 'Bollinger_PercentB',
+            "MinutesSincePeak",
+            "MinutesSinceTrough",
+            "FourierSignalSell",
+            "FourierSignalBuy",
+            "%K",
+            "%D",
+            # 'Slow %K',
+            # 'Slow %D',
+            # 'KalmanFilterEst',
+            "KalmanFilterEst_1st_Deriv",
+            "KalmanFilterEst_2nd_Deriv",
+            # 'HurstExponent',
+            # 'Interest_Rate_Difference',
+            # 'Interest_Rate_Difference_Change',
+            # 'Currency_Account_difference'
+        ]
+
+       #  ['Timestamp', 'Price', 'isLocalPeak', 'isLocalTrough', 'Label',
+       # 'MinutesSincePeak', 'MinutesSinceTrough', 'PriceChangeSincePeak',
+       # 'PriceChangeSinceTrough', 'FourierSignalSell', 'FourierSignalBuy']
+        self.X_train = self.train_data[feature_set]
+
+        # ].iloc[:self.split_idx]
+        self.X_test = self.test_data[feature_set]
+        # ].iloc[self.split_idx:]
+
+        # self.y_train = self.data['Label'].iloc[:self.split_idx]
+        # self.y_test = self.data['Label'].iloc[self.split_idx:]
+        self.y_train = self.train_data["Label"]
+        self.y_test = self.test_data["Label"]
+
+        print("len X train: ", len(self.X_train))
+        print("len X test: ", len(self.X_test))
+        print("len y train: ", len(self.y_train))
+        print("len y test: ", len(self.y_test))
+
+    def retrieve_test_set(self):
+        return self.test_data
+
+    def train(self):
+        # Implement or leave empty to override in derived classes
+        pass
+
+    def predict(self):
+        # Implement or leave empty to override in derived classes
+        feature_set = [
+            # 'Short_Moving_Avg',
+            "Short_Moving_Avg_1st_Deriv",
+            "Short_Moving_Avg_2nd_Deriv",
+            # 'Long_Moving_Avg',
+            # "Long_Moving_Avg_1st_Deriv",
+            # "Long_Moving_Avg_2nd_Deriv",
+            # 'RSI',
+            # 'Bollinger_PercentB',
+            "MinutesSincePeak",
+            "MinutesSinceTrough",
+            "FourierSignalSell",
+            "FourierSignalBuy",
+            "%K",
+            "%D",
+            # 'Slow %K',
+            # 'Slow %D',
+            # 'KalmanFilterEst',
+            "KalmanFilterEst_1st_Deriv",
+            "KalmanFilterEst_2nd_Deriv",
+            # 'HurstExponent',
+            # 'Interest_Rate_Difference',
+            # 'Interest_Rate_Difference_Change',
+            # 'Currency_Account_difference'
+        ]
+        test_data = self.data[feature_set]
+        print("check test_data: ", test_data)
+        test_data.to_csv("test_data.csv")
+        output = self.model.predict(test_data)
+        print("check output: ", output)
+
+    def evaluate(self, X, y):
+        # Implement evaluation logic
+        pass

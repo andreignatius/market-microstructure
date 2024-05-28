@@ -337,7 +337,8 @@ class BaseModel:
 
     def calculate_first_second_order_derivatives(self):
         # Calculate first and second order derivatives for selected features
-        for feature in ["KalmanFilterEst", "Short_Moving_Avg", "Long_Moving_Avg"]:
+        # for feature in ["KalmanFilterEst", "Short_Moving_Avg", "Long_Moving_Avg"]:
+        for feature in ["KalmanFilterEst", "Short_Moving_Avg"]:
             self.data[f"{feature}_1st_Deriv"] = self.data[feature].diff() * 100
             self.data[f"{feature}_2nd_Deriv"] = (
                 self.data[f"{feature}_1st_Deriv"].diff() * 100
@@ -410,8 +411,8 @@ class BaseModel:
             "Short_Moving_Avg_1st_Deriv",
             "Short_Moving_Avg_2nd_Deriv",
             # 'Long_Moving_Avg',
-            "Long_Moving_Avg_1st_Deriv",
-            "Long_Moving_Avg_2nd_Deriv",
+            # "Long_Moving_Avg_1st_Deriv",
+            # "Long_Moving_Avg_2nd_Deriv",
             # 'RSI',
             # 'Bollinger_PercentB',
             "MinutesSincePeak",
@@ -430,6 +431,10 @@ class BaseModel:
             # 'Interest_Rate_Difference_Change',
             # 'Currency_Account_difference'
         ]
+
+       #  ['Timestamp', 'Price', 'isLocalPeak', 'isLocalTrough', 'Label',
+       # 'MinutesSincePeak', 'MinutesSinceTrough', 'PriceChangeSincePeak',
+       # 'PriceChangeSinceTrough', 'FourierSignalSell', 'FourierSignalBuy']
         self.X_train = self.train_data[feature_set]
 
         # ].iloc[:self.split_idx]
