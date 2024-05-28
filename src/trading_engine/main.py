@@ -59,7 +59,7 @@ class TradingStrategy:
             self.data.set_index('Timestamp', inplace=True)
 
         # Resample the data by minute and compute OHLC
-        ohlc = self.data['Price'].resample('T').ohlc()
+        ohlc = self.data['Price'].resample('S').ohlc()
 
         # Capitalize the column headers
         ohlc.columns = [col.capitalize() for col in ohlc.columns]
@@ -69,7 +69,7 @@ class TradingStrategy:
 
         # # Append or update the CSV file instead of rewriting it entirely
         # ohlc.to_csv('ohlc_minutes.csv', mode='a', header=not file_exists)
-        ohlc.to_csv('ohlc_minutes_new.csv')
+        ohlc.to_csv('ohlc_seconds.csv')
 
         # Display the resulting OHLC values
         print("OHLC data: ", ohlc)
@@ -413,18 +413,26 @@ class TradingStrategy:
         self.data.to_csv("final_dataset_with_new_features.csv")
         # Split the data without shuffling
 
+        # Calculate the split index
+        split_ratio = 2 / 3  # 2:1 training to testing ratio
+        split_index = int(len(self.data) * split_ratio)
+
+        # Split the data without shuffling
+        self.train_data = self.data.iloc[:split_index].copy()
+        self.test_data = self.data.iloc[split_index:].copy()
+
         # # Filter the data for training and testing periods
         # self.train_data = self.data[(self.data['Date'] >= self.train_start) & (self.data['Date'] < self.train_end)]
         # self.test_data  = self.data[(self.data['Date'] >= self.test_start) & (self.data['Date'] < self.test_end)]
 
-        # Filter the data for training and testing periods and create copies
-        self.train_data = self.data[
-            (self.data["Date"] >= self.train_start)
-            & (self.data["Date"] < self.train_end)
-        ].copy()
-        self.test_data = self.data[
-            (self.data["Date"] >= self.test_start) & (self.data["Date"] < self.test_end)
-        ].copy()
+        # # Filter the data for training and testing periods and create copies
+        # self.train_data = self.data[
+        #     (self.data["Date"] >= self.train_start)
+        #     & (self.data["Date"] < self.train_end)
+        # ].copy()
+        # self.test_data = self.data[
+        #     (self.data["Date"] >= self.test_start) & (self.data["Date"] < self.test_end)
+        # ].copy()
 
         # # let's avoid age sampling / filtering for time being
         # # Calculate the age of each data point in days
