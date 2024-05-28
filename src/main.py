@@ -29,10 +29,12 @@ if __name__ == "__main__":
         strategy.analyze_data() # analyse data and gather prediction
 
     # Schedule the job to aggregate data every minute
-    schedule.every().minute.at(":00").do(job)
+    # schedule.every().minute.at(":00").do(job)
+
+    schedule.every().second.do(job)
 
     # 
-    schedule.every(20).minutes.do(job2)
+    # schedule.every(20).minutes.do(job2)
 
     # Continuously collect data and analyze it
     while True:

@@ -31,7 +31,7 @@ class BacktestTradingStrategy:
         for index, (row, prediction) in enumerate(
             zip(self.data.iterrows(), predicted_categories)
         ):
-            # print("check row: ", row)
+            print("check row: ", row, prediction)
             print("prediction: ", prediction)
             usd_btc_spot_rate = row[1]["Close"]
             current_date = row[1]["Timestamp"]
@@ -172,7 +172,8 @@ class BacktestTradingStrategy:
 
     def _check_stop_loss(self, usd_btc_spot_rate, date):
         if self.btc_inventory > 0:
-            change_percentage = (usd_btc_spot_rate - self.buy_price) / self.buy_price
+            change_percentage = abs(usd_btc_spot_rate - self.buy_price) / self.buy_price
+            print("change12345: ", change_percentage)
             if change_percentage * self.leverage_factor > self.stop_loss_threshold:
                 self._sell_btc(usd_btc_spot_rate, date, forced=True)
                 return True

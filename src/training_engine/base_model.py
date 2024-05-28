@@ -11,18 +11,18 @@ from sklearn.utils import resample
 
 
 class BaseModel:
-    def __init__(self, file_path, train_start, train_end, test_start, test_end):
+    def __init__(self, file_path):
         self.file_path = file_path
         # self.model_type = model_type
         self.data = None
 
-        self.train_start = train_start
-        self.train_end = train_end
-        self.test_start = test_start
-        self.test_end = test_end
+        # self.train_start = train_start
+        # self.train_end = train_end
+        # self.test_start = test_start
+        # self.test_end = test_end
 
-        self.train_start = pd.to_datetime(self.train_start)
-        self.train_end = pd.to_datetime(self.train_end)
+        # self.train_start = pd.to_datetime(self.train_start)
+        # self.train_end = pd.to_datetime(self.train_end)
 
         self.X = None
         self.y = None
@@ -48,17 +48,17 @@ class BaseModel:
     def load_preprocess_data(self):
         self.data = pd.read_csv(self.file_path)
         self.data["Date"] = pd.to_datetime(self.data["Timestamp"])
-        self.calculate_daily_percentage_change()
+        # self.calculate_daily_percentage_change()
 
         self.perform_fourier_transform_analysis()
         self.calculate_stochastic_oscillator()
         self.calculate_slow_stochastic_oscillator()
-        self.construct_kalman_filter()
+        # self.construct_kalman_filter()
         self.detect_rolling_peaks_and_troughs()
 
         self.calculate_moving_averages_and_rsi()
 
-        self.estimate_hurst_exponent()
+        # self.estimate_hurst_exponent()
         self.calculate_days_since_peaks_and_troughs()
         self.detect_fourier_signals()
         self.calculate_first_second_order_derivatives()
@@ -75,19 +75,27 @@ class BaseModel:
     def perform_fourier_transform_analysis(self):
         # Fourier Transform Analysis
         # close_prices = self.data['Close'].to_numpy()
-        print("check000: ", type(self.train_end - pd.DateOffset(months=12)))
-        print("check111: ", type(self.train_end))
-        print("check222: ", self.data["Date"])
-        d1 = self.train_end - pd.DateOffset(days=14)
-        d2 = self.train_end
+        # print("check000: ", type(self.train_end - pd.DateOffset(months=12)))
+        # print("check111: ", type(self.train_end))
+        # print("check222: ", self.data["Date"])
+        # d1 = self.train_end - pd.DateOffset(days=14)
+        # d2 = self.train_end
 
-        data_window = self.data[
-            (self.data["Date"] >= d1) & (self.data["Date"] < d2)
-        ].copy()
-        print("data_window: ", data_window)
+        # data_window = self.data[
+        #     (self.data["Date"] >= d1) & (self.data["Date"] < d2)
+        # ].copy()
+        # print("data_window: ", data_window)
 
-        close_prices = data_window["Close"].to_numpy()
-        # print("close_prices: ", close_prices)
+        # close_prices = data_window["Close"].to_numpy()
+        close_prices = self.data["Close"].to_numpy()
+
+        # Compute the mean of non-NaN values
+        mean_value = np.nanmean(close_prices)
+
+        # Replace NaN values with the mean
+        close_prices[np.isnan(close_prices)] = mean_value
+        
+        print("close_prices12345: ", close_prices)
         N = len(close_prices)
         T = 1.0  # 1 day
         close_fft = fft(close_prices)
@@ -105,7 +113,7 @@ class BaseModel:
             {
                 "Frequency": significant_frequencies,
                 "Amplitude": significant_amplitudes,
-                "MinutesPerCycle": days_per_cycle,
+                "SecondsPerCycle": days_per_cycle,
             }
         )
 
@@ -154,7 +162,7 @@ class BaseModel:
         # Add in fourier transform
         print("check fft_features: ", self.fft_features)
         dominant_period_lengths = sorted(
-            set((self.fft_features.loc[:10, "MinutesPerCycle"].values / 2).astype(int)),
+            set((self.fft_features.loc[:10, "SecondsPerCycle"].values / 2).astype(int)),
             reverse=True,
         )
         dominant_period_lengths = [i for i in dominant_period_lengths if i < 30]
@@ -314,12 +322,12 @@ class BaseModel:
                 checkpoint_price_top = current_price
 
             days_since_bottom = (
-                (today_date - checkpoint_date_bottom).days
+                (today_date - checkpoint_date_bottom).seconds
                 if checkpoint_date_bottom
                 else 0
             )
             days_since_peak = (
-                (today_date - checkpoint_date_top).days if checkpoint_date_top else 0
+                (today_date - checkpoint_date_top).seconds if checkpoint_date_top else 0
             )
 
             if checkpoint_price_bottom is not None:
@@ -338,7 +346,7 @@ class BaseModel:
     def calculate_first_second_order_derivatives(self):
         # Calculate first and second order derivatives for selected features
         # for feature in ["KalmanFilterEst", "Short_Moving_Avg", "Long_Moving_Avg"]:
-        for feature in ["KalmanFilterEst", "Short_Moving_Avg"]:
+        for feature in ["Short_Moving_Avg"]:
             self.data[f"{feature}_1st_Deriv"] = self.data[feature].diff() * 100
             self.data[f"{feature}_2nd_Deriv"] = (
                 self.data[f"{feature}_1st_Deriv"].diff() * 100
@@ -348,9 +356,13 @@ class BaseModel:
         self.data.bfill(inplace=True)
 
     def preprocess_data(self):
+        print("12345: ", self.data)
+        self.data.to_csv("check123.csv")
         self.data.dropna(inplace=True)
 
     def train_test_split_time_series(self):
+        print("SPLITTTTTTT")
+        print(self.data)
         # Convert 'Date' column to datetime if it's not already
         # self.data['Date'] = pd.to_datetime(self.data['Date'])
 
@@ -366,18 +378,28 @@ class BaseModel:
         self.data.to_csv("final_dataset_with_new_features.csv")
         # Split the data without shuffling
 
+        # Calculate the split index
+        split_ratio = 2 / 3  # 2:1 training to testing ratio
+        split_index = int(len(self.data) * split_ratio)
+
+        print("SPLIT INDEX: ", split_index)
+
+        # Split the data without shuffling
+        self.train_data = self.data.iloc[:split_index].copy()
+        self.test_data = self.data.iloc[split_index:].copy()
+
         # # Filter the data for training and testing periods
         # self.train_data = self.data[(self.data['Date'] >= self.train_start) & (self.data['Date'] < self.train_end)]
         # self.test_data  = self.data[(self.data['Date'] >= self.test_start) & (self.data['Date'] < self.test_end)]
 
-        # Filter the data for training and testing periods and create copies
-        self.train_data = self.data[
-            (self.data["Date"] >= self.train_start)
-            & (self.data["Date"] < self.train_end)
-        ].copy()
-        self.test_data = self.data[
-            (self.data["Date"] >= self.test_start) & (self.data["Date"] < self.test_end)
-        ].copy()
+        # # Filter the data for training and testing periods and create copies
+        # self.train_data = self.data[
+        #     (self.data["Date"] >= self.train_start)
+        #     & (self.data["Date"] < self.train_end)
+        # ].copy()
+        # self.test_data = self.data[
+        #     (self.data["Date"] >= self.test_start) & (self.data["Date"] < self.test_end)
+        # ].copy()
 
         # # let's avoid age sampling / filtering for time being
         # # Calculate the age of each data point in days
@@ -424,8 +446,8 @@ class BaseModel:
             # 'Slow %K',
             # 'Slow %D',
             # 'KalmanFilterEst',
-            "KalmanFilterEst_1st_Deriv",
-            "KalmanFilterEst_2nd_Deriv",
+            # "KalmanFilterEst_1st_Deriv",
+            # "KalmanFilterEst_2nd_Deriv",
             # 'HurstExponent',
             # 'Interest_Rate_Difference',
             # 'Interest_Rate_Difference_Change',
