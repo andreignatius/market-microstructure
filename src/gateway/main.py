@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import json
 import logging
+import os
 import time
 from enum import Enum
 from threading import Thread
@@ -11,6 +12,7 @@ from urllib.parse import urlencode
 import requests
 import websockets
 from binance import AsyncClient, Client
+from dotenv import load_dotenv
 
 logging.basicConfig(
     format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s",
@@ -271,11 +273,15 @@ class TradeExecutor:
                     self.log_trade_execution(order_event, "filled")
 
 
-if __name__ == "__main__":
-    api = ""
-    secret = ""
+load_dotenv(dotenv_path="../.env")
+API_KEY = os.getenv("API_KEY")
+API_SECRET = os.getenv("API_SECRET")
 
-    TradeExecutor("", api, secret).connect()
+if __name__ == "__main__":
+    api_key = API_KEY
+    api_secret = API_SECRET
+
+    TradeExecutor("", api_key, api_secret).connect()
     time.sleep(5)
     # data = {
     # "symbol": 'BTCUSDT',
@@ -301,7 +307,7 @@ if __name__ == "__main__":
         "timestamp": int(time.time() * 1000),
         "recvWindow": 60000,
     }
-    trader = TradeExecutor("", api, secret)
+    trader = TradeExecutor("", api_key, api_secret)
     while True:
         time.sleep(1)
         trader.execute_trade(data, "trade")
