@@ -12,6 +12,8 @@ from trading_engine.main import TradingStrategy
 import schedule
 import time
 
+
+
 # Main application loop
 if __name__ == "__main__":
     queue = Queue()
@@ -22,11 +24,16 @@ if __name__ == "__main__":
     data_thread = Thread(target=data_stream.fetch_data, daemon=True)
     data_thread.start()
 
+    time_elapsed = 0
+
     def job():
         strategy.aggregate_data()  # Only aggregate data, do not collect here
 
     def job2():
-        strategy.analyze_data() # analyse data and gather prediction
+        global time_elapsed
+        if time_elapsed > 30:
+            strategy.analyze_data() # analyse data and gather prediction
+            time_elapsed = 0
 
     # Schedule the job to aggregate data every minute
     # schedule.every().minute.at(":00").do(job)
@@ -34,13 +41,15 @@ if __name__ == "__main__":
     schedule.every().second.do(job)
 
     # 
-    # schedule.every(20).minutes.do(job2)
+    schedule.every(5).seconds.do(job2)
 
     # Continuously collect data and analyze it
     while True:
         strategy.collect_new_data()  # Continuously collect data every cycle
         schedule.run_pending()
-        time.sleep(1)  # Sleep briefly to avoid hogging CPU
+        time.sleep(0.5)  # Sleep briefly to avoid hogging CPU
+        time_elapsed += 0.5
+        print("time_elapsed: ", time_elapsed)
         
 # queue = Queue()
 # strategy = TradingStrategy(queue)

@@ -23,7 +23,7 @@ class TradingStrategy:
     def __init__(self, queue):
         self.queue = queue
         self.data = pd.DataFrame(columns=["Timestamp", "Price"])
-        self.file_path = "ohlc_minutes_new.csv"
+        self.file_path = "ohlc_seconds.csv"
         self.peaks = []
         self.troughs = []
         self.smoothed_prices = []
@@ -47,8 +47,8 @@ class TradingStrategy:
                 self.data = new_data
             if "Timestamp" not in self.data.index.names:
                 self.data.set_index("Timestamp", inplace=True, drop=False)
-        print("self.data111: ", self.data.head())
-        print("len: ", len(self.data))
+        # print("self.data111: ", self.data.head())
+        # print("len: ", len(self.data))
         return self.data
 
     def aggregate_data(self):
@@ -58,8 +58,12 @@ class TradingStrategy:
         if 'Timestamp' not in self.data.index.names:
             self.data.set_index('Timestamp', inplace=True)
 
-        # Resample the data by minute and compute OHLC
-        ohlc = self.data['Price'].resample('S').ohlc()
+        try:
+            # Resample the data by minute and compute OHLC
+            ohlc = self.data['Price'].resample('S').ohlc()
+            # print("ohlc: ", ohlc)
+        except:
+            return
 
         # Capitalize the column headers
         ohlc.columns = [col.capitalize() for col in ohlc.columns]
@@ -72,7 +76,7 @@ class TradingStrategy:
         ohlc.to_csv('ohlc_seconds.csv')
 
         # Display the resulting OHLC values
-        print("OHLC data: ", ohlc)
+        # print("OHLC data: ", ohlc)
 
 
     def analyze_data(self):
@@ -91,7 +95,7 @@ class TradingStrategy:
 
         # self.estimate_hurst_exponent()
         self.calculate_days_since_peaks_and_troughs()
-        self.detect_fourier_signals()
+        # self.detect_fourier_signals()
         self.calculate_first_second_order_derivatives()
 
         # self.preprocess_data()
@@ -221,22 +225,22 @@ class TradingStrategy:
             peaks_global_indices = [start_idx + p for p in peaks]
             # print("peaks: ", peaks)
             self.data.loc[peaks_global_indices, "isLocalPeak"] = True
-            print("peaks_global_indices: ", peaks_global_indices)
+            # print("peaks_global_indices: ", peaks_global_indices)
 
             # Find troughs by inverting the data
             troughs, _ = find_peaks(-window_data)
             troughs_global_indices = [start_idx + t for t in troughs]
             # print("troughs: ", troughs)
             self.data.loc[troughs_global_indices, "isLocalTrough"] = True
-            print("troughs_global_indices: ", troughs_global_indices)
+            # print("troughs_global_indices: ", troughs_global_indices)
 
-        print("CHECK LOCAL PEAK: ", self.data["isLocalPeak"])
-        print("CHECK LOCAL TROUGH: ", self.data["isLocalTrough"])
+        # print("CHECK LOCAL PEAK: ", self.data["isLocalPeak"])
+        # print("CHECK LOCAL TROUGH: ", self.data["isLocalTrough"])
         # Assign labels based on peaks and troughs
         self.data["Label"] = "Hold"  # Default label
         self.data.loc[self.data["isLocalPeak"], "Label"] = "Sell"
         self.data.loc[self.data["isLocalTrough"], "Label"] = "Buy"
-        print("CHECK LABEL: ", self.data["Label"])
+        # print("CHECK LABEL: ", self.data["Label"])
 
     # Calculating Moving Averages and RSI manually
     def calculate_rsi(self, window=14):
@@ -351,20 +355,20 @@ class TradingStrategy:
             if row["Label"] == "Sell":
                 checkpoint_date_top = today_date
                 checkpoint_price_top = current_price
-            if checkpoint_date_bottom:
-                print("CHECK TIMEDELTA: ", (today_date - checkpoint_date_bottom))
+            # if checkpoint_date_bottom:
+            #     print("CHECK TIMEDELTA: ", (today_date - checkpoint_date_bottom))
             days_since_bottom = (
-                (today_date - checkpoint_date_bottom).seconds // 60
+                (today_date - checkpoint_date_bottom).seconds
                 if checkpoint_date_bottom
                 else 0
             )
-            print("current_price: ", current_price)
-            print("checkpoint_date_top: ", checkpoint_date_top)
-            print("checkpoint_price_top: ", checkpoint_price_top)
-            print("checkpoint_date_bottom: ", checkpoint_date_bottom)
-            print("checkpoint_price_bottom: ", checkpoint_price_bottom)
+            # print("current_price: ", current_price)
+            # print("checkpoint_date_top: ", checkpoint_date_top)
+            # print("checkpoint_price_top: ", checkpoint_price_top)
+            # print("checkpoint_date_bottom: ", checkpoint_date_bottom)
+            # print("checkpoint_price_bottom: ", checkpoint_price_bottom)
             days_since_peak = (
-                (today_date - checkpoint_date_top).seconds // 60 if checkpoint_date_top else 0
+                (today_date - checkpoint_date_top).seconds if checkpoint_date_top else 0
             )
 
             if checkpoint_price_bottom is not None:
@@ -379,13 +383,12 @@ class TradingStrategy:
             # self.data.at[index, 'FourierSignalBuy'] = ( (days_since_bottom % 6 == 0) or (days_since_bottom % 7 == 0) )
             self.data.at[index, "PriceChangeSincePeak"] = price_change_since_peak
             self.data.at[index, "PriceChangeSinceTrough"] = price_change_since_bottom
-            print("MINUTESSINCEPEAK:", self.data["MinutesSincePeak"])
-            print("MinutesSinceTrough: ", self.data["MinutesSinceTrough"])
+            # print("MINUTESSINCEPEAK:", self.data["MinutesSincePeak"])
+            # print("MinutesSinceTrough: ", self.data["MinutesSinceTrough"])
 
     def calculate_first_second_order_derivatives(self):
         # Calculate first and second order derivatives for selected features
-        # for feature in ["KalmanFilterEst", "Short_Moving_Avg", "Long_Moving_Avg"]:
-        for feature in ["KalmanFilterEst", "Short_Moving_Avg"]:
+        for feature in ["KalmanFilterEst", "Short_Moving_Avg", "Long_Moving_Avg"]:
             self.data[f"{feature}_1st_Deriv"] = self.data[feature].diff() * 100
             self.data[f"{feature}_2nd_Deriv"] = (
                 self.data[f"{feature}_1st_Deriv"].diff() * 100
@@ -466,14 +469,14 @@ class TradingStrategy:
             "Short_Moving_Avg_1st_Deriv",
             "Short_Moving_Avg_2nd_Deriv",
             # 'Long_Moving_Avg',
-            # "Long_Moving_Avg_1st_Deriv",
-            # "Long_Moving_Avg_2nd_Deriv",
+            "Long_Moving_Avg_1st_Deriv",
+            "Long_Moving_Avg_2nd_Deriv",
             # 'RSI',
             # 'Bollinger_PercentB',
             "MinutesSincePeak",
             "MinutesSinceTrough",
-            "FourierSignalSell",
-            "FourierSignalBuy",
+            # "FourierSignalSell",
+            # "FourierSignalBuy",
             "%K",
             "%D",
             # 'Slow %K',
@@ -520,14 +523,14 @@ class TradingStrategy:
             "Short_Moving_Avg_1st_Deriv",
             "Short_Moving_Avg_2nd_Deriv",
             # 'Long_Moving_Avg',
-            # "Long_Moving_Avg_1st_Deriv",
-            # "Long_Moving_Avg_2nd_Deriv",
+            "Long_Moving_Avg_1st_Deriv",
+            "Long_Moving_Avg_2nd_Deriv",
             # 'RSI',
             # 'Bollinger_PercentB',
             "MinutesSincePeak",
             "MinutesSinceTrough",
-            "FourierSignalSell",
-            "FourierSignalBuy",
+            # "FourierSignalSell",
+            # "FourierSignalBuy",
             "%K",
             "%D",
             # 'Slow %K',
@@ -543,8 +546,8 @@ class TradingStrategy:
         test_data = self.data[feature_set]
         print("check test_data: ", test_data)
         test_data.to_csv("test_data.csv")
-        output = self.model.predict(test_data)
-        print("check output: ", output)
+        output = self.model.predict(test_data)[-1:]
+        print("check output: ", output, "price: ", self.data["Open"][-1:])
 
     def evaluate(self, X, y):
         # Implement evaluation logic
