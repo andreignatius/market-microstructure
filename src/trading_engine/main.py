@@ -24,7 +24,9 @@ class TradingStrategy:
         self.peaks = []
         self.troughs = []
         self.smoothed_prices = []
-        self.model = joblib.load("training_engine/outputs/logistic_regression_model.pkl")
+        self.model = joblib.load(
+            "training_engine/outputs/logistic_regression_model.pkl"
+        )
 
     def collect_new_data(self):
         new_rows = []
