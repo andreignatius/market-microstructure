@@ -22,6 +22,7 @@ import os
 class TradingStrategy:
     def __init__(self, queue):
         self.queue = queue
+        self.raw_data = pd.DataFrame(columns=["Timestamp", "Price"])
         self.data = pd.DataFrame(columns=["Timestamp", "Price"])
         self.file_path = "ohlc_seconds.csv"
         self.peaks = []
@@ -39,42 +40,43 @@ class TradingStrategy:
         if new_rows:
             new_data = pd.DataFrame(new_rows)
             new_data["Timestamp"] = pd.to_datetime(new_data["Timestamp"])
-            if not self.data.empty:
-                self.data = pd.concat([self.data, new_data], ignore_index=True)
+            if not self.raw_data.empty:
+                self.raw_data = pd.concat([self.raw_data, new_data], ignore_index=True)
             else:
-                self.data = new_data
-            if "Timestamp" not in self.data.index.names:
-                self.data.set_index("Timestamp", inplace=True, drop=False)
-        # print("self.data111: ", self.data.head())
-        # print("len: ", len(self.data))
-        return self.data
+                self.raw_data = new_data
+            if "Timestamp" not in self.raw_data.index.names:
+                self.raw_data.set_index("Timestamp", inplace=True, drop=False)
+        # print("self.raw_data111: ", self.raw_data.head())
+        # print("len: ", len(self.raw_data))
+        return self.raw_data
 
     def aggregate_data(self):
 
-        if self.data.empty:
+        if self.raw_data.empty:
             return
 
         # Convert 'Timestamp' to datetime format unconditionally
-        self.data['Timestamp'] = pd.to_datetime(self.data['Timestamp'])
+        self.raw_data['Timestamp'] = pd.to_datetime(self.raw_data['Timestamp'])
 
-        if 'Timestamp' not in self.data.index.names:
-            self.data.set_index('Timestamp', inplace=True)
+        if 'Timestamp' not in self.raw_data.index.names:
+            self.raw_data.set_index('Timestamp', inplace=True)
 
-        self.data.index = pd.to_datetime(self.data.index)
+        self.raw_data.index = pd.to_datetime(self.raw_data.index)
 
         # Define cutoff time for the last 300 seconds
         cutoff_time = pd.Timestamp.now() - pd.Timedelta(seconds=300)
-        # print("cutoff_time: ", cutoff_time)
+        print("cutoff_time: ", cutoff_time)
         # print("check data000: ", self.data)
         # print("type0: ", type(self.data.index))
         # print("type1: ", type(cutoff_time))
-        self.data = self.data[self.data.index >= cutoff_time]
-        # print("check data222: ", self.data)
+        self.raw_data = self.raw_data[self.raw_data.index >= cutoff_time]
+        # print("check data222: ", self.raw_data)
+        print("len: ", len(self.raw_data))
 
         try:
             # Resample the data by minute and compute OHLC
-            ohlc = self.data['Price'].resample('S').ohlc()
-            print("ohlc: ", ohlc)
+            ohlc = self.raw_data['Price'].resample('S').ohlc()
+            # print("ohlc: ", ohlc)
         except:
             return
 
@@ -95,7 +97,16 @@ class TradingStrategy:
     def analyze_data(self):
         self.data = pd.read_csv(self.file_path)
         self.data["Date"] = pd.to_datetime(self.data["Timestamp"])
+        self.data.ffill(inplace=True)
         self.data.bfill(inplace=True)
+
+        # print("Data after fill:")
+        # print(self.data.head(10))
+
+        # Specifically checking if any of the price columns still have NaN
+        if self.data[['Open', 'High', 'Low', 'Close']].isnull().any().any():
+            print("Incomplete data, skipping analysis.")
+            return
         self.calculate_daily_percentage_change()
 
         self.perform_fourier_transform_analysis()
@@ -557,10 +568,15 @@ class TradingStrategy:
             # 'Currency_Account_difference'
         ]
         test_data = self.data[feature_set]
-        print("check test_data: ", test_data)
+        print("check last data: ", self.data[-5:])
         test_data.to_csv("test_data.csv")
-        output = self.model.predict(test_data)[-1:]
-        print("check output: ", output, "price: ", self.data["Open"][-1:])
+        try:
+            output = self.model.predict(test_data)[-1:]
+            print("check output: ", output, "price: ", self.data["Open"][-1:])
+        except:
+            output = "Hold"
+            print("model err, just ignore and hold!")
+            return
 
     def evaluate(self, X, y):
         # Implement evaluation logic
