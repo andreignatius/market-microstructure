@@ -50,16 +50,31 @@ class TradingStrategy:
         return self.data
 
     def aggregate_data(self):
+
         if self.data.empty:
             return
+
+        # Convert 'Timestamp' to datetime format unconditionally
+        self.data['Timestamp'] = pd.to_datetime(self.data['Timestamp'])
 
         if 'Timestamp' not in self.data.index.names:
             self.data.set_index('Timestamp', inplace=True)
 
+        self.data.index = pd.to_datetime(self.data.index)
+
+        # Define cutoff time for the last 300 seconds
+        cutoff_time = pd.Timestamp.now() - pd.Timedelta(seconds=300)
+        # print("cutoff_time: ", cutoff_time)
+        # print("check data000: ", self.data)
+        # print("type0: ", type(self.data.index))
+        # print("type1: ", type(cutoff_time))
+        self.data = self.data[self.data.index >= cutoff_time]
+        # print("check data222: ", self.data)
+
         try:
             # Resample the data by minute and compute OHLC
             ohlc = self.data['Price'].resample('S').ohlc()
-            # print("ohlc: ", ohlc)
+            print("ohlc: ", ohlc)
         except:
             return
 

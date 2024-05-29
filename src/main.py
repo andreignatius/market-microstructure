@@ -27,21 +27,18 @@ if __name__ == "__main__":
     time_elapsed = 0
 
     def job():
-        strategy.aggregate_data()  # Only aggregate data, do not collect here
-
-    def job2():
         global time_elapsed
-        if time_elapsed > 30:
+
+        strategy.aggregate_data()  # Only aggregate data, do not collect here
+        
+        if time_elapsed > 40:
             strategy.analyze_data() # analyse data and gather prediction
-            time_elapsed = 0
 
     # Schedule the job to aggregate data every minute
     # schedule.every().minute.at(":00").do(job)
 
     schedule.every().second.do(job)
 
-    # 
-    schedule.every(5).seconds.do(job2)
 
     # Continuously collect data and analyze it
     while True:
