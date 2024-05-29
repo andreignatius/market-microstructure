@@ -16,8 +16,13 @@ from scipy.signal import find_peaks
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import resample
 
+import datetime
 import os
 
+import warnings
+
+# Ignore specific FutureWarnings from pandas
+warnings.filterwarnings("ignore", category=FutureWarning, module="pandas")
 
 class TradingStrategy:
     def __init__(self, queue):
@@ -67,13 +72,13 @@ class TradingStrategy:
 
         # Define cutoff time for the last 300 seconds
         cutoff_time = pd.Timestamp.now() - pd.Timedelta(seconds=300)
-        print("cutoff_time: ", cutoff_time)
+        # print("cutoff_time: ", cutoff_time)
         # print("check data000: ", self.data)
         # print("type0: ", type(self.data.index))
         # print("type1: ", type(cutoff_time))
         self.raw_data = self.raw_data[self.raw_data.index >= cutoff_time]
         # print("check data222: ", self.raw_data)
-        print("len: ", len(self.raw_data))
+        # print("len: ", len(self.raw_data))
 
         try:
             # Resample the data by minute and compute OHLC
@@ -125,7 +130,7 @@ class TradingStrategy:
         self.calculate_first_second_order_derivatives()
 
         # self.preprocess_data()
-        self.predict()
+        return self.predict()
 
     def calculate_daily_percentage_change(self):
         self.data["Daily_Change"] = self.data["Close"].pct_change() * 100
@@ -412,6 +417,7 @@ class TradingStrategy:
             # print("MINUTESSINCEPEAK:", self.data["MinutesSincePeak"])
             # print("MinutesSinceTrough: ", self.data["MinutesSinceTrough"])
 
+
     def calculate_first_second_order_derivatives(self):
         # Calculate first and second order derivatives for selected features
         for feature in ["KalmanFilterEst", "Short_Moving_Avg", "Long_Moving_Avg"]:
@@ -574,7 +580,15 @@ class TradingStrategy:
         test_data.to_csv("test_data.csv")
         try:
             output = self.model.predict(test_data)[-1:]
-            print("check output: ", output, "price: ", self.data["Open"][-1:])
+            price = self.data["Open"][-1:].iloc[-1]
+            
+            current_datetime = datetime.datetime.now()
+            # Format the datetime string
+            formatted_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            # print("check output: ", output, "price: ", price)
+            action = (output[0], price, formatted_datetime)
+            print("action: ", action)
+            return action
         except:
             output = "Hold"
             print("model err, just ignore and hold!")

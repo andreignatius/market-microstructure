@@ -32,7 +32,8 @@ if __name__ == "__main__":
         strategy.aggregate_data()  # Only aggregate data, do not collect here
         
         if time_elapsed > 40:
-            strategy.analyze_data() # analyse data and gather prediction
+            output = strategy.analyze_data() # analyse data and gather prediction
+            print("model output: ", output)
 
     # Schedule the job to aggregate data every minute
     # schedule.every().minute.at(":00").do(job)
