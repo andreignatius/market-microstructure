@@ -33,16 +33,17 @@ class TradingStrategy:
         self.peaks = []
         self.troughs = []
         self.smoothed_prices = []
-        self.model = joblib.load(
-            "training_engine/outputs/logistic_regression_model.pkl"
-        )
+        self.model = joblib.load("training_engine/outputs/logistic_regression_model.pkl")
 
     def collect_new_data(self):
         new_rows = []
         while not self.queue.empty():
             data_point = self.queue.get()
-            new_row = {"Timestamp": data_point[0], "Price": data_point[1]}
-            new_rows.append(new_row)
+            if data_point[1] != '':
+                new_row = {"Timestamp": data_point[0], "Price": float(data_point[1])}
+                new_rows.append(new_row)
+            else:
+                print("nope something wrong with price")
 
         if new_rows:
             new_data = pd.DataFrame(new_rows)
@@ -83,7 +84,7 @@ class TradingStrategy:
         try:
             # Resample the data by minute and compute OHLC
             ohlc = self.raw_data['Price'].resample('S').ohlc()
-            # print("ohlc: ", ohlc)
+
         except:
             return
 
@@ -95,6 +96,7 @@ class TradingStrategy:
 
         # # Append or update the CSV file instead of rewriting it entirely
         # ohlc.to_csv('ohlc_minutes.csv', mode='a', header=not file_exists)
+        print("???????????????????????????????????????do i even reach here")
         ohlc.to_csv('ohlc_seconds.csv')
 
         # Display the resulting OHLC values
