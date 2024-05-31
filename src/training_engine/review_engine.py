@@ -88,12 +88,15 @@ if __name__ == "__main__":
 
     # Initialize and use the BaseModel for advanced analysis
     # model = BaseModel(file_path='temp_data.csv', train_start='2013-01-01', train_end='2018-01-01', test_start='2018-01-01', test_end='2023-01-01')
+    # model = LogRegModel(
+    #     file_path="inputs/binance_btcusdt_1min_ccxt.csv",
+    #     train_start="2024-04-14",
+    #     train_end="2024-05-01",
+    #     test_start="2024-05-02",
+    #     test_end="2024-05-10",
+    # )
     model = LogRegModel(
-        file_path="inputs/binance_btcusdt_1min_ccxt.csv",
-        train_start="2024-04-14",
-        train_end="2024-05-01",
-        test_start="2024-05-02",
-        test_end="2024-05-10",
+        file_path="inputs/binance_seconds.csv"
     )
     model.load_preprocess_data()  # Load and preprocess the data
     model.train_test_split_time_series()  # Split data into training and testing
