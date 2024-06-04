@@ -88,17 +88,20 @@ class BookKeeper:
 
     def _calculate_pnl_series(self):
         portfolio_value = self.trades.apply(
-            lambda row: (row["Price"] * row["Quantity"])
+            lambda row: (row["Price"] * row["Quantity"] - row["TransactionCost"])
             if row["Type"] == "buy"
-            else (-row["Price"] * row["Quantity"]),
+            else (-row["Price"] * row["Quantity"] + row["TransactionCost"]),
             axis=1,
         )
-        pnl_series = portfolio_value.cumsum()
+        pnl_series = portfolio_value.cumsum() - portfolio_value[0]
         return pnl_series
-
+    
     def _update_realized_pnl(
         self, symbol, quantity, price, trade_type, transaction_cost
     ):
+        if price == 0 or quantity == 0:
+            return
+
         if symbol not in self.positions:
             self.positions[symbol] = {"cost": 0, "quantity": 0}
 
@@ -109,44 +112,64 @@ class BookKeeper:
 
         if trade_type == "buy":
             if curr_quantity < 0:
-                # Selling short positions
-                quantity_to_close = min(abs(curr_quantity), quantity)
-                trade_pnl = quantity_to_close * (curr_cost - price)
-                self.realized_pnl += trade_pnl
+                quantity_to_close = min(quantity, abs(curr_quantity))
+                quantity_to_long = max(quantity + curr_quantity, 0)
+                if quantity_to_close < abs(curr_quantity):
+                    # Close partial short positions
+                    new_cost = curr_cost
+                    new_quantity = curr_quantity + quantity_to_close
+                elif quantity_to_close == abs(curr_quantity):
+                    # Close all short positions
+                    new_cost = 0
+                    new_quantity = 0
+                    if quantity_to_long > 0:
+                        # Add long position after closing existing short position
+                        new_cost += price
+                        new_quantity += quantity_to_long
+            else:
+                quantity_to_close = 0
+                quantity_to_long = quantity
 
-            # Adding to long position
-            new_quantity = curr_quantity + quantity
-            new_cost = (curr_quantity * curr_cost + quantity * price) / new_quantity
-            self.positions[symbol] = {"quantity": new_quantity, "cost": new_cost}
-        # elif trade_type == "sell":
-        #     if curr_quantity > 0:
-        #         # Selling long positions
-        #         quantity_to_close = min((curr_quantity), quantity)
-        #         trade_pnl = quantity_to_close * (price - curr_price)
-        #         self.realized_pnl += trade_pnl
-        #         self.positions[symbol] -= quantity_to_close
+                # Add long position to existing long position
+                new_cost += (curr_cost * curr_quantity + price * quantity_to_long) / (
+                    curr_quantity + quantity_to_long
+                )
+                new_quantity = curr_quantity + quantity_to_long
 
-        #     # Adding to short position
-        #     self.positions[symbol] -= quantity
+            pnl = quantity_to_close * (curr_cost - price) - transaction_cost
+            self.realized_pnl += pnl
 
-        #     if positions[asset]["quantity"] > 0:
-        #         # Closing long positions
-        #         quantity_to_close = min(positions[asset]["quantity"], quantity)
-        #         realized_pnl += quantity_to_close * (price - positions[asset]["price"])
-        #         positions[asset]["quantity"] -= quantity_to_close
+            self.positions[symbol] = {"cost": new_cost, "quantity": new_quantity}
+        elif trade_type == "sell":
+            if curr_quantity > 0:
+                quantity_to_close = min(quantity, curr_quantity)
+                quantity_to_short = min(curr_quantity - quantity, 0)
+                if quantity_to_close < curr_quantity:
+                    # Close partial long positions
+                    new_cost = curr_cost
+                    new_quantity = curr_quantity - quantity_to_close
+                elif quantity_to_close == curr_quantity:
+                    # Close all long positions
+                    new_cost = 0
+                    new_quantity = 0
+                    if quantity_to_short < 0:
+                        # Add short position after closing existing long position
+                        new_cost += price
+                        new_quantity += quantity_to_short
+            else:
+                quantity_to_close = 0
+                quantity_to_short = -quantity
 
-        #     # Adding to short position
-        #     new_quantity = positions[asset]["quantity"] - quantity
-        #     new_price = (
-        #         (
-        #             abs(positions[asset]["quantity"]) * positions[asset]["price"]
-        #             + quantity * price
-        #         )
-        #         / abs(new_quantity)
-        #         if new_quantity != 0
-        #         else 0
-        #     )
-        #     positions[asset] = {"quantity": new_quantity, "price": new_price}
+                # Add short position to existing short position
+                new_cost = (
+                    curr_cost * abs(curr_quantity) + price * abs(quantity_to_short)
+                ) / (abs(curr_quantity) + abs(quantity_to_short))
+                new_quantity = curr_quantity + quantity_to_short
+
+            pnl = quantity_to_close * (curr_cost - price) - transaction_cost
+            self.realized_pnl += pnl
+
+            self.positions[symbol] = {"cost": new_cost, "quantity": new_quantity}
 
     def _update_unrealized_pnl(self):
         pass
