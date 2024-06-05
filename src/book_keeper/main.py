@@ -1,77 +1,144 @@
+import pandas as pd
+import time
+from urllib.parse import urlencode
+import hmac
+import hashlib
+import requests
+
 class BookKeeper:
     """
-    - stores all open trades and executed trades as well as technical indicator values
-      surrounding trade at the time of execution
-    - will interact with ML modeling in ReviewEngine class for review to assess effectiveness
-      and for parameter tuning where applicable
-    - will interact with UI LivePlotter for user to monitor MTM / PnL on demand
-    - provides functionality for reporting and analysis
+    This class stores all executed trades and provides analyses based on executed trades.
     """
 
-    def __init__(self, ticker):
-        self.ticker = ticker
-        self.current_unrealized_pnl = 0
-        self.current_realized_pnl = 0
-        self.historical_trades = {}  # Stores trades indexed by trade ID
+    def __init__(self, initial_cash, symbol):
+        # Base URLs
+        self.BASE_URL = 'https://testnet.binancefuture.com' #hardcoded
+        
+        self.symbol = symbol
+        self.initial_cash = initial_cash
+        self.market_prices = pd.DataFrame(columns=["Date", "Symbol", "Price"])
+        
+        self.historical_data = pd.DataFrame(
+            columns=[
+                "Timestamp",
+                "WalletBalance",
+                "RealizedProfit",
+                "UnrealizedProfit",
+
+            ]
+        )
+        
+        self.historical_positions = pd.DataFrame(
+            columns=[
+                "Timestamp",
+                "Symbol",
+                "EntryPrice",
+                "PositionAmt",
+            ]
+        )
+        
+        self.market_prices = pd.DataFrame(columns=["Date", "Symbol", "Price"])
+        
+    @property
+    def get_initial_cash(self):
+        return self.initial_cash
 
     @property
-    def unrealized_pnl(self):
-        return self.current_unrealized_pnl
+    def get_unrealized_pnl(self):
+
+        # Return last record in self.historical_position
+        
+        return self.historical_data['UnrealizedProfit'].iloc[-1]
 
     @property
-    def realized_pnl(self):
-        return self.current_realized_pnl
+    def get_realized_pnl(self):
+        
+        # Return last record in self.historical_position
+        return self.historical_data['RealizedProfit'].iloc[-1]
 
-    def add_trade(self, trade):
-        """
-        Stores a new trade in the trades dictionary.
-        Each trade can be a dictionary with details like trade_id, status, instrument, volume, execution_price, etc.
-        """
-        # TODO: Implement the method to add a trade to the trades dict
-        self.__update_pnl()
+    def update_bookkeeper(self, date, middle_price):
+
+        # 1. Append date and middle_price to df market prices
+        # 2. Make API call to get realised and unrealised price, and positions
+        # 3. Update historical_data, historical_positions
+        # 4. Trim data
+        timestamp = int(time.time() * 1000)
+        params = {'timestamp': timestamp}
+        
+        query_string = urlencode(params)
+    
+        # signature
+        signature = hmac.new(api_secret.encode("utf-8"), query_string.encode("utf-8"), hashlib.sha256).hexdigest()
+    
+        # url
+        url = self.BASE_URL + '/fapi/v2/account' + "?" + query_string + "&signature=" + signature
+    
+        # post request
+        session = requests.Session()
+        session.headers.update(
+            {"Content-Type": "application/json;charset=utf-8", "X-MBX-APIKEY": api_key}
+        )
+        response = session.get(url=url, params={})
+    
+        # get order id
+        response_map = response.json()
+        
+        # trim df if needed
+        if self.historical_data.shape[0] == 86400:
+            self.market_prices = self.market_prices.iloc[1:, :]
+            self.historical_data = self.historical_data.iloc[1:, :]
+            self.historical_positions = self.historical_positions.iloc[1:, :]
+            
+        # update market price df
+        temp = pd.Series(data = [date, self.symbol, middle_price], index = ["Date", "Symbol", "Price"])
+        self.market_prices = pd.concat([self.market_prices, temp.to_frame().T], ignore_index=True)
+        
+        
+        # update hist data df
+        temp = pd.Series(data = [pd.to_datetime(int(time.time() * 1000), unit='ns'), 
+                                 float(response_map['totalWalletBalance']),
+                                 float(response_map['totalWalletBalance']) - float(self.initial_cash), 
+                                 float(response_map['totalUnrealizedProfit'])
+                                ],
+                            index = ["Timestamp", 'WalletBalance',  "RealizedProfit", "UnrealizedProfit"])
+        
+        self.historical_data = pd.concat([self.historical_data, temp.to_frame().T], ignore_index=True)
+
+        # update historical position df
+        temp = pd.DataFrame(response_map['positions'])
+        temp = temp[(temp['symbol'] == self.symbol)]
+        
+        temp = pd.Series(data = [pd.to_datetime(int(time.time() * 1000), unit='ns'), 
+                                self.symbol,
+                                float(temp['entryPrice']),
+                                float(temp['positionAmt'])
+                                ],
+                            index = ["Timestamp", "Symbol", "EntryPrice", 'PositionAmt'])
+        
+        self.historical_positions = pd.concat([self.historical_positions, temp.to_frame().T], ignore_index=True)
         pass
 
-    def get_trade(self, trade_id):
-        """
-        Returns details of a single trade by trade ID.
-        """
-        # TODO: Implement the method to retrieve a single trade's details
-        pass
+    def calculate_max_drawdown(self):
+        
+        roll_max = self.historical_data['WalletBalance'].cummax()
+        max_daily_drawdown = (self.historical_data['WalletBalance']/roll_max - 1.0).cummin()
 
-    def list_all_trades(self, filter_by=None):
-        """
-        Returns a list of all trades, optionally filtered by certain criteria.
-        """
-        # TODO: Implement the method to list trades with optional filtering
-        pass
+        return max_daily_drawdown.iloc[-1]
 
-    def calculate_pnl(self):
-        """
-        Calculate the profit and loss across all or filtered trades.
-        """
-        # TODO: Implement the method to calculate P&L
-        pass
+    def calculate_sharpe_ratio(self, risk_free_rate=0):
+        
+        sharpe = self.historical_data['WalletBalance'].pct_change().dropna().mean()/self.historical_data['WalletBalance'].pct_change().dropna().std()
+        
+        return sharpe
 
-    def generate_report(self, report_type):
-        """
-        Generate various types of reports (e.g., performance, compliance, risk management).
-        """
-        # TODO: Implement the method to generate specific types of reports
-        pass
-
-    def export_data(self, format_type="csv"):
-        """
-        Export the trades and indicators to a file in a specified format, such as CSV or JSON.
-        """
-        # TODO: Implement data export functionality
-        pass
-
-    def synchronize_with_risk_manager(self, risk_manager):
-        """
-        Synchronize with the RiskManager to update trading limits and risk metrics.
-        """
-        # TODO: Implement synchronization with RiskManager
-        pass
-
-    def __update_pnl(self):
-        pass
+    def calculate_vol(self):
+        return self.market_prices['Price'].dropna().std()
+    
+    def return_historical_data(self):
+        return self.historical_data
+    
+    def return_historical_market_prices(self):
+        return self.market_prices
+    
+    def return_historical_positions(self):
+        return self.historical_positions
