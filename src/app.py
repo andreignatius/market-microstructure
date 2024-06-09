@@ -8,18 +8,29 @@ from gateway.data_stream import DataStream
 from gateway.main import TradeExecutor
 from risk_manager.main import RiskManager
 from trading_engine.main import TradingStrategy
+from datetime import datetime
+
+# use this to create get requests
+from rest_connect.rest_factory import *
 
 # from training_engine.review_engine import ReviewEngine
 import time
 import random
 
+# this is offset to timestamp, ensure it is in sync with server
+offset = 15000
+
 
 class ExecManager:
-    def __init__(self) -> None:
+    def __init__(self, tradeExecutorObj, restGateway) -> None:
         self.queue = Queue()
+        self.tradeExecutor = tradeExecutorObj
+
+        self.restGateway = restGateway
 
         # probably pass a obj
         self.strategy = TradingStrategy(self.queue)
+        self.tradeExecutor.connect()
 
     def updateQueue(self, s):
         output = (s["datetime"], s["lastprice"])
@@ -72,47 +83,95 @@ class ExecManager:
                     print(f"not approved, do not do anything{approve_random_number}")
                 else:
                     print(f"TRADE APPROVED{approve_random_number}")
+                    if output != None:
+
+                        direction = output[0].upper()
+                        limit_price = float(output[1])
+                        timestamp = output[2]
+                        date_obj = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+                        edjacob_time = int(time.time() * 1000)
+
+                        # get our gateway time
+                        response = self.restGateway.time()
+                        if response != None:
+                            servertime = int(response["serverTime"])
+                            print(
+                                f"gateway : {servertime} vs edjacob : {edjacob_time} vs andre: {int(date_obj.timestamp() * 1000)} ; diff wrt edjacob {int(response['serverTime']) - edjacob_time}"
+                            )
+
+                            # I try LIMIT ORDER ya
+                            data = {
+                                "symbol": "BTCUSDT",
+                                "price": limit_price,
+                                "side": direction,
+                                "type": "LIMIT",
+                                "quantity": 0.002,
+                                "timestamp": servertime - offset,
+                                "recvWindow": 60000,
+                                "timeinforce": "GTC",
+                            }
+                            # data = {
+                            #    "symbol": "BTCUSDT",
+                            #    "side": direction,
+                            #    "type": "MARKET",
+                            #    "quantity": 0.002,
+                            #    "timestamp": servertime - offset,
+                            #    "recvWindow": 60000,
+                            # }
+                            print(data)
+                            self.tradeExecutor.execute_trade(data, "trade")
+
+
+def on_exec():
+    print("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
 
 
 # create this app.py to serve as our actual strat file, the main.py is used by strategy already.
 if __name__ == "__main__":
+
+    # lets fucking go
     print("LETS FUCKING GO")
-    myExecManager = ExecManager()
-    # get api key and secret
-    # dotenv_path = '/vault/binance_keys'
-    # load_dotenv(dotenv_path=dotenv_path)
 
-    # os.getenv('BINANCE_API_KEY')
-
-    # os.getenv('BINANCE_API_SECRET')
-
-    # strategy parameters
+    # 1. symbol and API key. someone can help the getenv thing pls
     symbol = "BTCUSDT"
     api_key = ""
     api_secret = ""
 
-    # create a binance gateway object
+    # 2. create a rest api caller object for rest requests. I only use this to get server time
+    my_restfactory = RestFactory()
+    futuretestnet_base_url = "https://testnet.binancefuture.com"
+    # 2a. in our case its this
+    futuretestnet_gateway = my_restfactory.create_gateway(
+        "BINANCE_TESTNET_FUTURE",
+        futuretestnet_base_url,
+        api_key,
+        api_secret,
+    )
+
+    # 3. create EdJacob trade executor object. Will call the TradeExecutor.connect in the Exec Manager constructor
+    print("instantiate trade executor")
+    myTradeExecutor = TradeExecutor(symbol, api_key, api_secret)
+    myTradeExecutor.register_exec_callback(
+        on_exec
+    )  # this is dummy it is literally just a lorem ipsum
+    print("trade executor OK")
+
+    # 4. create the Execution Manager.
+    # Impl wise can be cleaner, but for now pass the rest request caller and EdJacob trade executor
+    myExecManager = ExecManager(myTradeExecutor, futuretestnet_gateway)
+
+    # 5. create the Datastream object, this is to stream data
     myDataStream = DataStream(symbol, api_key, api_secret)
 
-    # register callbacks
+    # 6. register the trading strategy itself as a callback for data stream
+    # essentially its saying if there is new data, run the strategy
+    # room for improvement probably pass the TradingStrategy as an object. At the moment the proj supports Andre's trading strategy object
     myDataStream.register_tick_callback(myExecManager.execStrat)
 
-    # start connection
+    # 7. start connection data stream
     myDataStream.connect()
 
+    # 8. I think this is just for looping.
     while True:
-        time.sleep(40)
+        time.sleep(10)
         print("done wait")
-
-    ## create a strategy a register callbacks with gateway
-#
-# strategy = PricingStrategy(symbol, order_size, sensitivity, binance_gateway)
-# binance_gateway.register_execution_callback(strategy.on_execution)
-# binance_gateway.register_depth_callback(strategy.on_orderbook)
-#
-## start
-# binance_gateway.connect()
-# strategy.start()
-#
-# while True:
-#    time.sleep(2)
