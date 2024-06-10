@@ -74,17 +74,10 @@ class TradingStrategy:
             return
 
         # Convert 'Timestamp' to datetime format unconditionally
-<<<<<<< HEAD
         self.raw_data["Timestamp"] = pd.to_datetime(self.raw_data["Timestamp"])
 
         if "Timestamp" not in self.raw_data.index.names:
             self.raw_data.set_index("Timestamp", inplace=True)
-=======
-        self.raw_data['Timestamp'] = pd.to_datetime(self.raw_data['Timestamp'])
-
-        if 'Timestamp' not in self.raw_data.index.names:
-            self.raw_data.set_index('Timestamp', inplace=True)
->>>>>>> main
 
         self.raw_data.index = pd.to_datetime(self.raw_data.index)
 
@@ -100,13 +93,7 @@ class TradingStrategy:
 
         try:
             # Resample the data by minute and compute OHLC
-<<<<<<< HEAD
             ohlc = self.raw_data["Price"].resample("S").ohlc()
-
-=======
-            ohlc = self.raw_data['Price'].resample('S').ohlc()
-            # print("ohlc: ", ohlc)
->>>>>>> main
         except:
             return
 
@@ -118,20 +105,12 @@ class TradingStrategy:
 
         # # Append or update the CSV file instead of rewriting it entirely
         # ohlc.to_csv('ohlc_minutes.csv', mode='a', header=not file_exists)
-<<<<<<< HEAD
         print("???????????????????????????????????????do i even reach here")
         ohlc.to_csv("ohlc_seconds.csv")
-=======
-        ohlc.to_csv('ohlc_seconds.csv')
->>>>>>> main
 
         # Display the resulting OHLC values
         # print("OHLC data: ", ohlc)
 
-<<<<<<< HEAD
-=======
-
->>>>>>> main
     def analyze_data(self):
         self.data = pd.read_csv(self.file_path)
         self.data["Date"] = pd.to_datetime(self.data["Timestamp"])
@@ -142,11 +121,7 @@ class TradingStrategy:
         # print(self.data.head(10))
 
         # Specifically checking if any of the price columns still have NaN
-<<<<<<< HEAD
         if self.data[["Open", "High", "Low", "Close"]].isnull().any().any():
-=======
-        if self.data[['Open', 'High', 'Low', 'Close']].isnull().any().any():
->>>>>>> main
             print("Incomplete data, skipping analysis.")
             return
         self.calculate_daily_percentage_change()
@@ -451,10 +426,6 @@ class TradingStrategy:
             self.data.at[index, "PriceChangeSinceTrough"] = price_change_since_bottom
             # print("MINUTESSINCEPEAK:", self.data["MinutesSincePeak"])
             # print("MinutesSinceTrough: ", self.data["MinutesSinceTrough"])
-<<<<<<< HEAD
-=======
-
->>>>>>> main
 
     def calculate_first_second_order_derivatives(self):
         # Calculate first and second order derivatives for selected features
@@ -560,15 +531,9 @@ class TradingStrategy:
             # 'Currency_Account_difference'
         ]
 
-<<<<<<< HEAD
         #  ['Timestamp', 'Price', 'isLocalPeak', 'isLocalTrough', 'Label',
         # 'MinutesSincePeak', 'MinutesSinceTrough', 'PriceChangeSincePeak',
         # 'PriceChangeSinceTrough', 'FourierSignalSell', 'FourierSignalBuy']
-=======
-       #  ['Timestamp', 'Price', 'isLocalPeak', 'isLocalTrough', 'Label',
-       # 'MinutesSincePeak', 'MinutesSinceTrough', 'PriceChangeSincePeak',
-       # 'PriceChangeSinceTrough', 'FourierSignalSell', 'FourierSignalBuy']
->>>>>>> main
         self.X_train = self.train_data[feature_set]
 
         # ].iloc[:self.split_idx]
@@ -625,17 +590,10 @@ class TradingStrategy:
         try:
             output = self.model.predict(test_data)[-1:]
             price = self.data["Open"][-1:].iloc[-1]
-<<<<<<< HEAD
 
             current_datetime = datetime.datetime.now()
             # Format the datetime string
             formatted_datetime = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
-=======
-            
-            current_datetime = datetime.datetime.now()
-            # Format the datetime string
-            formatted_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
->>>>>>> main
             # print("check output: ", output, "price: ", price)
             action = (output[0], price, formatted_datetime)
             print("action: ", action)
