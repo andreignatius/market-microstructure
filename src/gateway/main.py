@@ -287,11 +287,6 @@ class TradeExecutor:
         print("################ REGISTERING CALLBACK ################")
         self._exec_callbacks.append(callback)
 
-
-load_dotenv(dotenv_path="../.env")
-API_KEY = os.getenv("API_KEY")
-API_SECRET = os.getenv("API_SECRET")
-
 load_dotenv(dotenv_path="../.env")
 API_KEY = os.getenv("API_KEY")
 API_SECRET = os.getenv("API_SECRET")

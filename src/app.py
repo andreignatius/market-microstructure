@@ -22,9 +22,10 @@ offset = 15000
 
 
 class ExecManager:
-    def __init__(self, tradeExecutorObj, restGateway) -> None:
+    def __init__(self, tradeExecutorObj, bookKeeperObj, restGateway) -> None:
         self.queue = Queue()
         self.tradeExecutor = tradeExecutorObj
+        self.bookKeeper = bookKeeperObj
 
         self.restGateway = restGateway
 
@@ -120,6 +121,8 @@ class ExecManager:
                             # }
                             print(data)
                             self.tradeExecutor.execute_trade(data, "trade")
+                get_pnl = self.bookKeeper.get_realized_pnl()
+                print("******MY_PNL******", get_pnl)
 
 
 def on_exec():
@@ -156,9 +159,13 @@ if __name__ == "__main__":
     )  # this is dummy it is literally just a lorem ipsum
     print("trade executor OK")
 
+    myBookKeeper = BookKeeper(10000, 'USDBTCT')
+
+    print("456MY BOOK KEEPER OK")
+
     # 4. create the Execution Manager.
     # Impl wise can be cleaner, but for now pass the rest request caller and EdJacob trade executor
-    myExecManager = ExecManager(myTradeExecutor, futuretestnet_gateway)
+    myExecManager = ExecManager(myTradeExecutor, myBookKeeper, futuretestnet_gateway)
 
     # 5. create the Datastream object, this is to stream data
     myDataStream = DataStream(symbol, api_key, api_secret)
