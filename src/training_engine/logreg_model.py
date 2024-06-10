@@ -44,8 +44,8 @@ class LogRegModel(BaseModel):
         self.model.fit(self.X_train, self.y_train)
 
         # Save the model to a file
-        joblib.dump(self.model, "outputs/logistic_regression_model.pkl")
-        print("Model saved to outputs/logistic_regression_model.pkl")
+        joblib.dump(self.model, "outputs/logistic_regression_model_updated.pkl")
+        print("Model saved to outputs/logistic_regression_model_updated.pkl")
 
     def predict(self):
         # self.data['PredictedLabel'] = self.model.predict(self.scaler.transform(self.X))
