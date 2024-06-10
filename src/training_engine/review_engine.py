@@ -96,7 +96,7 @@ if __name__ == "__main__":
     #     test_end="2024-05-10",
     # )
     model = LogRegModel(
-        file_path="inputs/binance_seconds.csv"
+        file_path="inputs/ohlc_3hrs.csv"
     )
     model.load_preprocess_data()  # Load and preprocess the data
     model.train_test_split_time_series()  # Split data into training and testing

@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from threading import Thread
+import datetime
 
 from binance import AsyncClient, BinanceSocketManager, Client
 
@@ -59,7 +60,10 @@ class DataStream:
     # an internal method to reconnect websocket
     async def _reconnect_ws(self):
         logging.info("reconnecting websocket")
-        self._async_client = await AsyncClient.create(self._api_key, self._api_secret)
+        # FORCE TESTNET TRUE
+        self._async_client = await AsyncClient.create(
+            self._api_key, self._api_secret, testnet=True
+        )
 
     # an internal method to runs tasks in parallel
     def _run_async_tasks(self):
@@ -75,6 +79,7 @@ class DataStream:
             if not self._multi_socket:
                 logging.info("depth socket not connected, reconnecting")
                 self._binance_socket_manager = BinanceSocketManager(self._async_client)
+                # this is connecting to futures
                 self._multi_socket = (
                     self._binance_socket_manager.multiplex_socket(
                         [self._symbol.lower()+"@trade", self._symbol.lower() + "@bookTicker"]
@@ -97,7 +102,8 @@ class DataStream:
                         self.output["bestaskprice"] = self._market_cache["data"]["a"]
                         self.output["bestaskquantity"] = self._market_cache["data"]["A"]
 
-                    print(self.output)
+                    self.output["datetime"] = datetime.datetime.now()
+                    # print(self.output)
                     if self._tick_callbacks:
                         # notify callbacks
                         for _callback in self._tick_callbacks:

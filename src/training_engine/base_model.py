@@ -357,7 +357,7 @@ class BaseModel:
 
     def preprocess_data(self):
         print("12345: ", self.data)
-        self.data.to_csv("check123.csv")
+        self.data.to_csv("processed.csv")
         self.data.dropna(inplace=True)
 
     def train_test_split_time_series(self):

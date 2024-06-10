@@ -4,7 +4,7 @@ import time
 from urllib.parse import urlencode
 
 import requests
-from rest_abstract import AbstractRESTGateway
+from rest_connect.rest_abstract import AbstractRESTGateway
 
 
 def create_query(base_url, api_url, my_api_key, my_api_secret, order_params):
@@ -48,6 +48,15 @@ class FutureTestnetGateway(BaseRESTGateway):
         response = requests.get(url=url)
         response_data = response.json()
         print("Response: {}".format(response_data))
+        return response_data
+
+    def time(self):
+        api_url = "/fapi/v1/time"
+        url = self._base_url + api_url
+        response = requests.get(url=url)
+        response_data = response.json()
+        print("Response: {}".format(response_data))
+        return response_data
 
     def get_price_ticker(self, symbol):
         api_url = "/fapi/v2/ticker/price"
@@ -116,6 +125,13 @@ class SpotTestnetGateway(BaseRESTGateway):
     # test connection
     def ping(self):
         api_url = "/api/v3/ping"
+        url = self._base_url + api_url
+        response = requests.get(url=url)
+        response_data = response.json()
+        print("Response: {}".format(response_data))
+
+    def time(self):
+        api_url = "/fapi/v1/time"
         url = self._base_url + api_url
         response = requests.get(url=url)
         response_data = response.json()
