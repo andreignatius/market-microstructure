@@ -22,7 +22,7 @@ offset = 15000
 
 
 class ExecManager:
-    def __init__(self, tradeExecutorObj, restGateway) -> None:
+    def __init__(self, tradeExecutorObj, restGateway, bookKeeper) -> None:
         self.queue = Queue()
         self.tradeExecutor = tradeExecutorObj
 
@@ -31,6 +31,9 @@ class ExecManager:
         # probably pass a obj
         self.strategy = TradingStrategy(self.queue)
         self.tradeExecutor.connect()
+
+        # bookkeeper
+        self.myBookKeeper = bookKeeper
 
     def updateQueue(self, s):
         output = (s["datetime"], s["lastprice"])
@@ -59,7 +62,16 @@ class ExecManager:
             6. if risk say doable --> send to trade executor
             """
 
+            # get our gateway time
+            response = self.restGateway.time()
+            servertime = int(response["serverTime"])
+            print(f"my servertime is {servertime}")
+            date_obj = datetime.fromtimestamp(servertime / 1000).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+
             print("CALL BOOK FUNCTION")
+            self.myBookKeeper.update_bookkeeper(date_obj, servertime, check)
             print("CALL RISK FUNCTION")
 
             # this is to model risk liquidate
@@ -88,38 +100,29 @@ class ExecManager:
                         direction = output[0].upper()
                         limit_price = float(output[1])
                         timestamp = output[2]
-                        date_obj = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
                         edjacob_time = int(time.time() * 1000)
 
-                        # get our gateway time
-                        response = self.restGateway.time()
-                        if response != None:
-                            servertime = int(response["serverTime"])
-                            print(
-                                f"gateway : {servertime} vs edjacob : {edjacob_time} vs andre: {int(date_obj.timestamp() * 1000)} ; diff wrt edjacob {int(response['serverTime']) - edjacob_time}"
-                            )
-
-                            # I try LIMIT ORDER ya
-                            data = {
-                                "symbol": "BTCUSDT",
-                                "price": limit_price,
-                                "side": direction,
-                                "type": "LIMIT",
-                                "quantity": 0.002,
-                                "timestamp": servertime - offset,
-                                "recvWindow": 60000,
-                                "timeinforce": "GTC",
-                            }
-                            # data = {
-                            #    "symbol": "BTCUSDT",
-                            #    "side": direction,
-                            #    "type": "MARKET",
-                            #    "quantity": 0.002,
-                            #    "timestamp": servertime - offset,
-                            #    "recvWindow": 60000,
-                            # }
-                            print(data)
-                            self.tradeExecutor.execute_trade(data, "trade")
+                        # I try LIMIT ORDER ya
+                        data = {
+                            "symbol": "BTCUSDT",
+                            "price": limit_price,
+                            "side": direction,
+                            "type": "LIMIT",
+                            "quantity": 0.002,
+                            "timestamp": servertime - offset,
+                            "recvWindow": 60000,
+                            "timeinforce": "GTC",
+                        }
+                        # data = {
+                        #    "symbol": "BTCUSDT",
+                        #    "side": direction,
+                        #    "type": "MARKET",
+                        #    "quantity": 0.002,
+                        #    "timestamp": servertime - offset,
+                        #    "recvWindow": 60000,
+                        # }
+                        print(data)
+                        self.tradeExecutor.execute_trade(data, "trade")
 
 
 def on_exec():
@@ -134,8 +137,9 @@ if __name__ == "__main__":
 
     # 1. symbol and API key. someone can help the getenv thing pls
     symbol = "BTCUSDT"
-    api_key = ""
-    api_secret = ""
+    init_money = 2000
+    api_key = "2c21d49dc352f416d6f64b238697ea03756538a5516c4df1fd5cccdc43550163"
+    api_secret = "16fb5e688ed1d9d44cce03af050299795cd1946854677780df01f22c5a86e2f9"
 
     # 2. create a rest api caller object for rest requests. I only use this to get server time
     my_restfactory = RestFactory()
@@ -149,16 +153,20 @@ if __name__ == "__main__":
     )
 
     # 3. create EdJacob trade executor object. Will call the TradeExecutor.connect in the Exec Manager constructor
+    print("instantiate bookkeeper")
+    myBookkeeper = BookKeeper(symbol, init_money, api_key, api_secret)
+    print("bookkeeper OK")
+
     print("instantiate trade executor")
     myTradeExecutor = TradeExecutor(symbol, api_key, api_secret)
     myTradeExecutor.register_exec_callback(
-        on_exec
+        myBookkeeper.return_historical_positions
     )  # this is dummy it is literally just a lorem ipsum
     print("trade executor OK")
 
     # 4. create the Execution Manager.
     # Impl wise can be cleaner, but for now pass the rest request caller and EdJacob trade executor
-    myExecManager = ExecManager(myTradeExecutor, futuretestnet_gateway)
+    myExecManager = ExecManager(myTradeExecutor, futuretestnet_gateway, myBookkeeper)
 
     # 5. create the Datastream object, this is to stream data
     myDataStream = DataStream(symbol, api_key, api_secret)
