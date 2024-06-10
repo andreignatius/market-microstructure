@@ -23,10 +23,6 @@ import warnings
 
 # Ignore specific FutureWarnings from pandas
 warnings.filterwarnings("ignore", category=FutureWarning, module="pandas")
-<<<<<<< HEAD
-
-=======
->>>>>>> main
 
 class TradingStrategy:
     def __init__(self, queue):
@@ -37,13 +33,7 @@ class TradingStrategy:
         self.peaks = []
         self.troughs = []
         self.smoothed_prices = []
-<<<<<<< HEAD
         self.model = joblib.load("training_engine/outputs/logistic_regression_model_updated.pkl")
-=======
-        self.model = joblib.load(
-            "training_engine/outputs/logistic_regression_model.pkl"
-        )
->>>>>>> main
 
     def collect_new_data(self):
         new_rows = []
