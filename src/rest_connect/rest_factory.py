@@ -1,4 +1,4 @@
-from rest import *
+from rest_connect.rest import *
 
 
 class RestFactory:
