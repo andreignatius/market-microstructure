@@ -292,6 +292,10 @@ load_dotenv(dotenv_path="../.env")
 API_KEY = os.getenv("API_KEY")
 API_SECRET = os.getenv("API_SECRET")
 
+load_dotenv(dotenv_path="../.env")
+API_KEY = os.getenv("API_KEY")
+API_SECRET = os.getenv("API_SECRET")
+
 if __name__ == "__main__":
     api_key = API_KEY
     api_secret = API_SECRET

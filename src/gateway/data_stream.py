@@ -81,8 +81,8 @@ class DataStream:
                 self._binance_socket_manager = BinanceSocketManager(self._async_client)
                 # this is connecting to futures
                 self._multi_socket = (
-                    self._binance_socket_manager.futures_multiplex_socket(
-                        ["btcusdt@trade", "btcusdt@bookTicker"]
+                    self._binance_socket_manager.multiplex_socket(
+                        [self._symbol.lower()+"@trade", self._symbol.lower() + "@bookTicker"]
                     )
                 )
 
