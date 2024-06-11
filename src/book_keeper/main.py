@@ -10,19 +10,21 @@ class BookKeeper:
     This class stores all executed trades and provides analyses based on executed trades.
     """
 
-    def __init__(self, initial_cash, symbol, api_key=None, api_secret=None):
+    # def __init__(self, initial_cash, symbol, api_key=None, api_secret=None):
+    def __init__(self, symbol, api_key=None, api_secret=None):
         # Base URLs
         self.BASE_URL = 'https://testnet.binancefuture.com' #hardcoded
         self._api_key = api_key
         self._api_secret = api_secret
         self.symbol = symbol
-        self.initial_cash = initial_cash
+        # self.initial_cash = initial_cash
         self.market_prices = pd.DataFrame(columns=["Date", "Symbol", "Price"])
         
         self.historical_data = pd.DataFrame(
             columns=[
                 "Timestamp",
                 "WalletBalance",
+                "AvailableBalance"
                 "RealizedProfit",
                 "UnrealizedProfit",
 
@@ -40,9 +42,9 @@ class BookKeeper:
         
         self.market_prices = pd.DataFrame(columns=["Date", "Symbol", "Price"])
         
-    @property
-    def get_initial_cash(self):
-        return self.initial_cash
+    # @property
+    # def get_initial_cash(self):
+    #     return self.initial_cash
 
     @property
     def get_unrealized_pnl(self):
@@ -83,7 +85,7 @@ class BookKeeper:
     
         # get order id
         response_map = response.json()
-        print("response_map_FULL: ", response_map)
+        # print("response_map_FULL: ", response_map)
         
         # trim df if needed
         if self.historical_data.shape[0] == 86400:
@@ -95,14 +97,15 @@ class BookKeeper:
         temp = pd.Series(data = [date, self.symbol, middle_price], index = ["Date", "Symbol", "Price"])
         self.market_prices = pd.concat([self.market_prices, temp.to_frame().T], ignore_index=True)
         
-        print("ALLMYKEYS: ", response_map.keys())
+        # print("ALLMYKEYS: ", response_map.keys())
         # update hist data df
         temp = pd.Series(data = [pd.to_datetime(int(time.time() * 1000), unit='ns'), 
                                  float(response_map['totalWalletBalance']),
-                                 float(response_map['totalWalletBalance']) - float(self.initial_cash), 
+                                 float(response_map['availableBalance']),
+                                 float(response_map['totalWalletBalance']) - float(response_map['availableBalance']), 
                                  float(response_map['totalUnrealizedProfit'])
                                 ],
-                            index = ["Timestamp", 'WalletBalance',  "RealizedProfit", "UnrealizedProfit"])
+                            index = ["Timestamp", 'WalletBalance', "AvailableBalance", "RealizedProfit", "UnrealizedProfit"])
         
         self.historical_data = pd.concat([self.historical_data, temp.to_frame().T], ignore_index=True)
 

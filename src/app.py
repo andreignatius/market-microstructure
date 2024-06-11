@@ -168,7 +168,7 @@ if __name__ == "__main__":
     )  # this is dummy it is literally just a lorem ipsum
     print("trade executor OK")
 
-    myBookKeeper = BookKeeper(10000, 'BTCUSDT',api_key, api_secret)
+    myBookKeeper = BookKeeper('BTCUSDT',api_key, api_secret)
 
     print("456MY BOOK KEEPER OK")
 
