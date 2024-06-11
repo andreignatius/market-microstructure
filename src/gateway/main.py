@@ -89,6 +89,8 @@ class TradeExecutor:
         self.manager = manager
         self.api_key = api_key
         self.api_secret = api_secret
+        print("CHECK MY API_KEY: ", api_key)
+        print("CHECK MY API_SECRET: ", api_secret)
         self.testnet = testnet
         self._exchange_name = name
         # callbacks

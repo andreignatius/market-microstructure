@@ -10,10 +10,11 @@ class BookKeeper:
     This class stores all executed trades and provides analyses based on executed trades.
     """
 
-    def __init__(self, initial_cash, symbol):
+    def __init__(self, initial_cash, symbol, api_key=None, api_secret=None):
         # Base URLs
         self.BASE_URL = 'https://testnet.binancefuture.com' #hardcoded
-        
+        self._api_key = api_key
+        self._api_secret = api_secret
         self.symbol = symbol
         self.initial_cash = initial_cash
         self.market_prices = pd.DataFrame(columns=["Date", "Symbol", "Price"])
@@ -68,7 +69,7 @@ class BookKeeper:
         query_string = urlencode(params)
     
         # signature
-        signature = hmac.new(api_secret.encode("utf-8"), query_string.encode("utf-8"), hashlib.sha256).hexdigest()
+        signature = hmac.new(self._api_secret.encode("utf-8"), query_string.encode("utf-8"), hashlib.sha256).hexdigest()
     
         # url
         url = self.BASE_URL + '/fapi/v2/account' + "?" + query_string + "&signature=" + signature
@@ -76,12 +77,13 @@ class BookKeeper:
         # post request
         session = requests.Session()
         session.headers.update(
-            {"Content-Type": "application/json;charset=utf-8", "X-MBX-APIKEY": api_key}
+            {"Content-Type": "application/json;charset=utf-8", "X-MBX-APIKEY": self._api_key}
         )
         response = session.get(url=url, params={})
     
         # get order id
         response_map = response.json()
+        print("response_map_FULL: ", response_map)
         
         # trim df if needed
         if self.historical_data.shape[0] == 86400:
@@ -93,7 +95,7 @@ class BookKeeper:
         temp = pd.Series(data = [date, self.symbol, middle_price], index = ["Date", "Symbol", "Price"])
         self.market_prices = pd.concat([self.market_prices, temp.to_frame().T], ignore_index=True)
         
-        
+        print("ALLMYKEYS: ", response_map.keys())
         # update hist data df
         temp = pd.Series(data = [pd.to_datetime(int(time.time() * 1000), unit='ns'), 
                                  float(response_map['totalWalletBalance']),

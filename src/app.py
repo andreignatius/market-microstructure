@@ -12,11 +12,12 @@ from datetime import datetime
 
 # use this to create get requests
 from rest_connect.rest_factory import *
+from dotenv import load_dotenv
+import os
 
 # from training_engine.review_engine import ReviewEngine
 import time
 import random
-
 # this is offset to timestamp, ensure it is in sync with server
 offset = 15000
 
@@ -121,24 +122,32 @@ class ExecManager:
                             # }
                             print(data)
                             self.tradeExecutor.execute_trade(data, "trade")
-                get_pnl = self.bookKeeper.get_realized_pnl()
-                print("******MY_PNL******", get_pnl)
+
+                        print("my limit price: ", limit_price)
+                        self.bookKeeper.update_bookkeeper(datetime.now(), limit_price)
+                        get_pnl = self.bookKeeper.return_historical_data()
+                        print("******return_historical_data******", get_pnl)
 
 
 def on_exec():
     print("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
 
 
+
 # create this app.py to serve as our actual strat file, the main.py is used by strategy already.
 if __name__ == "__main__":
-
+    load_dotenv(dotenv_path=".env")
+    API_KEY = os.getenv("API_KEY")
+    API_SECRET = os.getenv("API_SECRET")
     # lets fucking go
     print("LETS FUCKING GO")
 
     # 1. symbol and API key. someone can help the getenv thing pls
     symbol = "BTCUSDT"
-    api_key = ""
-    api_secret = ""
+    api_key = API_KEY
+    api_secret = API_SECRET
+    # print("1api_key: ", api_key)
+    # print("1api_secret: ", api_secret)
 
     # 2. create a rest api caller object for rest requests. I only use this to get server time
     my_restfactory = RestFactory()
@@ -159,7 +168,7 @@ if __name__ == "__main__":
     )  # this is dummy it is literally just a lorem ipsum
     print("trade executor OK")
 
-    myBookKeeper = BookKeeper(10000, 'USDBTCT')
+    myBookKeeper = BookKeeper(10000, 'BTCUSDT',api_key, api_secret)
 
     print("456MY BOOK KEEPER OK")
 
