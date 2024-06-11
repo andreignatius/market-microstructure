@@ -113,12 +113,12 @@ class BookKeeper:
         temp = pd.DataFrame(response_map['positions'])
         temp = temp[(temp['symbol'] == self.symbol)]
         
-        temp = pd.Series(data = [pd.to_datetime(int(time.time() * 1000), unit='ns'), 
+        temp = pd.Series(data=[
+                                pd.to_datetime(int(time.time() * 1000), unit='ns'),
                                 self.symbol,
-                                float(temp['entryPrice']),
-                                float(temp['positionAmt'])
-                                ],
-                            index = ["Timestamp", "Symbol", "EntryPrice", 'PositionAmt'])
+                                float(temp['entryPrice'].iloc[0]),
+                                float(temp['positionAmt'].iloc[0])
+                            ], index=["Timestamp", "Symbol", "EntryPrice", 'PositionAmt'])
         
         self.historical_positions = pd.concat([self.historical_positions, temp.to_frame().T], ignore_index=True)
         pass

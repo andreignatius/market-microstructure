@@ -412,8 +412,13 @@ class TradingStrategy:
             self.data.at[index, "MinutesSinceTrough"] = days_since_bottom
             # self.data.at[index, 'FourierSignalSell'] = ( (days_since_peak % 6 == 0) or (days_since_peak % 7 == 0) )
             # self.data.at[index, 'FourierSignalBuy'] = ( (days_since_bottom % 6 == 0) or (days_since_bottom % 7 == 0) )
-            self.data.at[index, "PriceChangeSincePeak"] = price_change_since_peak
-            self.data.at[index, "PriceChangeSinceTrough"] = price_change_since_bottom
+
+            # Ensure the relevant columns are of type float
+            self.data["PriceChangeSincePeak"] = self.data["PriceChangeSincePeak"].astype(float)
+            self.data["PriceChangeSinceTrough"] = self.data["PriceChangeSinceTrough"].astype(float)
+
+            self.data.at[index, "PriceChangeSincePeak"] = float(price_change_since_peak)
+            self.data.at[index, "PriceChangeSinceTrough"] = float(price_change_since_bottom)
             # print("MINUTESSINCEPEAK:", self.data["MinutesSincePeak"])
             # print("MinutesSinceTrough: ", self.data["MinutesSinceTrough"])
 

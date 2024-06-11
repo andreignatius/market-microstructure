@@ -112,14 +112,6 @@ class ExecManager:
                                 "recvWindow": 60000,
                                 "timeinforce": "GTC",
                             }
-                            # data = {
-                            #    "symbol": "BTCUSDT",
-                            #    "side": direction,
-                            #    "type": "MARKET",
-                            #    "quantity": 0.002,
-                            #    "timestamp": servertime - offset,
-                            #    "recvWindow": 60000,
-                            # }
                             print(data)
                             self.tradeExecutor.execute_trade(data, "trade")
 
