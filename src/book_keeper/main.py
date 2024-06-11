@@ -24,7 +24,7 @@ class BookKeeper:
             columns=[
                 "Timestamp",
                 "WalletBalance",
-                "AvailableBalance"
+                "AvailableBalance",
                 "RealizedProfit",
                 "UnrealizedProfit",
 
@@ -112,7 +112,7 @@ class BookKeeper:
         # update historical position df
         temp = pd.DataFrame(response_map['positions'])
         temp = temp[(temp['symbol'] == self.symbol)]
-        
+
         temp = pd.Series(data=[
                                 pd.to_datetime(int(time.time() * 1000), unit='ns'),
                                 self.symbol,

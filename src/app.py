@@ -118,7 +118,8 @@ class ExecManager:
                         print("my limit price: ", limit_price)
                         self.bookKeeper.update_bookkeeper(datetime.now(), limit_price)
                         get_pnl = self.bookKeeper.return_historical_data()
-                        print("******return_historical_data******", get_pnl)
+                        print("******return_historical_data******\n", get_pnl)
+                        get_pnl.to_csv("historical_data.csv")
 
 
 def on_exec():
