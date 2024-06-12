@@ -5,9 +5,76 @@ class RiskManager:
     """
 
     def __init__(self, book_keeper):
+        """
+        This is risk manager, we will measure risk with the following tools
+        1. Check balance (including cash)
+        2. Portfolio value
+        3. Positions (to check for short)
+        """
         self.book_keeper = book_keeper
         self.risk_metrics = {}
         self.greeks = {}  # Options trading might require tracking of Greeks
+
+    def check_balance(self,trade):
+        current_balance = self.book_keeper.get_balance()
+        initial_balance = self.book_keeper.get_initial_balance()
+        reserve_ratio = 0.10
+        balance_limit = reserve_ratio * initial_balance
+
+        post_trade_balance = current_balance - trade # assuming buy order
+        # if post_trade_balance > balance_limit, continue trade, otherwise don't trade
+        if post_trade_balance > balance_limit:
+            print('Proceed with trade')
+            return True
+        else: return False # Don't trade
+
+    def check_PnL(self):
+        portfolio_value = self.book_keeper.get_WalletBalance() # in the historical_data dataframe, ['WalletBalance'] dataframe
+
+    def check_position(self,sellrequest):
+        current_trade_balance = self.book_keeper.get_positionamount() # trade balance is amnt of BTC in $
+        if sellrequest < current_trade_balance: # assuming sellrequest is in $ amount
+            return True # allow sell
+        else: return False # don't allow short position
+        
+    # Other pre-trade controls
+    def check_order_size(tradesize):
+        order_size_control = 0.02 # insert amount of BTC here
+        if tradesize == order_size_control:
+            return True 
+        else: 
+            print('Check order size')
+            return False
+    
+    def check_order_value(self,trade):
+        market_price_df = self.book_keeper.return_historical_market_prices()
+        latest_market_price = market_price_df['Price'].iloc[-1]
+        upper_bound_price_ratio = 1.2 # Can adjust the tolerance, upper bound assuming buy order
+        if trade <= latest_market_price * upper_bound_price_ratio:
+            return True
+        else:
+            print('Check order value')
+            return False
+        
+
+    def check_symbol(tradesymbol):
+        ticker_control = 'BTCUSDT' # Set what ticker we want to trade to prevent ordering the wrong asset
+        if tradesymbol == ticker_control:
+            return True
+        else:
+            print('Check trade symbol')
+            return False
+
+
+
+
+
+
+
+
+
+
+
 
     def update_risk_metrics(self):
         """
