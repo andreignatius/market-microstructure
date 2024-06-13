@@ -12,44 +12,30 @@ from datetime import datetime
 
 # use this to create get requests
 from rest_connect.rest_factory import *
-<<<<<<< HEAD
-=======
 from dotenv import load_dotenv
 import os
->>>>>>> main
 
 # from training_engine.review_engine import ReviewEngine
 import time
 import random
-<<<<<<< HEAD
 
-=======
->>>>>>> main
 # this is offset to timestamp, ensure it is in sync with server
 offset = 15000
 
 
 class ExecManager:
-<<<<<<< HEAD
-    def __init__(self, tradeExecutorObj, restGateway) -> None:
-        self.queue = Queue()
-        self.tradeExecutor = tradeExecutorObj
-=======
     def __init__(self, tradeExecutorObj, bookKeeperObj, restGateway) -> None:
         self.queue = Queue()
         self.tradeExecutor = tradeExecutorObj
         self.bookKeeper = bookKeeperObj
->>>>>>> main
 
         self.restGateway = restGateway
 
         # probably pass a obj
         self.strategy = TradingStrategy(self.queue)
         self.tradeExecutor.connect()
-<<<<<<< HEAD
         self.reattempt_liquidate = False
-=======
->>>>>>> main
+
 
     def updateQueue(self, s):
         output = (s["datetime"], s["lastprice"])
@@ -258,7 +244,7 @@ if __name__ == "__main__":
         on_exec
     )  # this is dummy it is literally just a lorem ipsum
     print("trade executor OK")
-    
+
     myBookKeeper = BookKeeper('BTCUSDT',api_key, api_secret)
 
     print("456MY BOOK KEEPER OK")
