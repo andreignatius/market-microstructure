@@ -89,6 +89,8 @@ class TradeExecutor:
         self.manager = manager
         self.api_key = api_key
         self.api_secret = api_secret
+        print("CHECK MY API_KEY: ", api_key)
+        print("CHECK MY API_SECRET: ", api_secret)
         self.testnet = testnet
         self._exchange_name = name
         # callbacks
@@ -286,11 +288,6 @@ class TradeExecutor:
     def register_exec_callback(self, callback):
         print("################ REGISTERING CALLBACK ################")
         self._exec_callbacks.append(callback)
-
-
-load_dotenv(dotenv_path="../.env")
-API_KEY = os.getenv("API_KEY")
-API_SECRET = os.getenv("API_SECRET")
 
 load_dotenv(dotenv_path="../.env")
 API_KEY = os.getenv("API_KEY")
