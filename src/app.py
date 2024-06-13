@@ -12,26 +12,44 @@ from datetime import datetime
 
 # use this to create get requests
 from rest_connect.rest_factory import *
+<<<<<<< HEAD
+=======
+from dotenv import load_dotenv
+import os
+>>>>>>> main
 
 # from training_engine.review_engine import ReviewEngine
 import time
 import random
+<<<<<<< HEAD
 
+=======
+>>>>>>> main
 # this is offset to timestamp, ensure it is in sync with server
 offset = 15000
 
 
 class ExecManager:
+<<<<<<< HEAD
     def __init__(self, tradeExecutorObj, restGateway) -> None:
         self.queue = Queue()
         self.tradeExecutor = tradeExecutorObj
+=======
+    def __init__(self, tradeExecutorObj, bookKeeperObj, restGateway) -> None:
+        self.queue = Queue()
+        self.tradeExecutor = tradeExecutorObj
+        self.bookKeeper = bookKeeperObj
+>>>>>>> main
 
         self.restGateway = restGateway
 
         # probably pass a obj
         self.strategy = TradingStrategy(self.queue)
         self.tradeExecutor.connect()
+<<<<<<< HEAD
         self.reattempt_liquidate = False
+=======
+>>>>>>> main
 
     def updateQueue(self, s):
         output = (s["datetime"], s["lastprice"])
@@ -190,6 +208,11 @@ class ExecManager:
                                 }
                                 print(data)
                                 self.tradeExecutor.execute_trade(data, "trade")
+                                print("my limit price: ", limit_price)
+                                self.bookKeeper.update_bookkeeper(datetime.now(), limit_price)
+                                get_pnl = self.bookKeeper.return_historical_data()
+                                print("******return_historical_data******\n", get_pnl)
+                                get_pnl.to_csv("historical_data.csv")
                         else:
                             print("PRICE HAS MOVED SIGNIFICANTLY, IGNORE")
                 else:
@@ -200,16 +223,22 @@ def on_exec():
     print("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
 
 
+
+
 # create this app.py to serve as our actual strat file, the main.py is used by strategy already.
 if __name__ == "__main__":
-
+    load_dotenv(dotenv_path=".env")
+    API_KEY = os.getenv("API_KEY")
+    API_SECRET = os.getenv("API_SECRET")
     # lets fucking go
     print("LETS FUCKING GO")
 
     # 1. symbol and API key. someone can help the getenv thing pls
     symbol = "BTCUSDT"
-    api_key = ""
-    api_secret = ""
+    api_key = API_KEY
+    api_secret = API_SECRET
+    # print("1api_key: ", api_key)
+    # print("1api_secret: ", api_secret)
 
     # 2. create a rest api caller object for rest requests. I only use this to get server time
     my_restfactory = RestFactory()
@@ -229,10 +258,14 @@ if __name__ == "__main__":
         on_exec
     )  # this is dummy it is literally just a lorem ipsum
     print("trade executor OK")
+    
+    myBookKeeper = BookKeeper('BTCUSDT',api_key, api_secret)
+
+    print("456MY BOOK KEEPER OK")
 
     # 4. create the Execution Manager.
     # Impl wise can be cleaner, but for now pass the rest request caller and EdJacob trade executor
-    myExecManager = ExecManager(myTradeExecutor, futuretestnet_gateway)
+    myExecManager = ExecManager(myTradeExecutor, myBookKeeper, futuretestnet_gateway)
 
     # 5. create the Datastream object, this is to stream data
     myDataStream = DataStream(symbol, api_key, api_secret)
