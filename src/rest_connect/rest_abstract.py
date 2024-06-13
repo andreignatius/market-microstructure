@@ -7,6 +7,10 @@ class AbstractRESTGateway(ABC):
         pass
 
     @abstractmethod
+    def time(self):
+        pass
+
+    @abstractmethod
     def get_price_ticker(self):
         pass
 
@@ -28,6 +32,10 @@ class AbstractRESTGateway(ABC):
 
     @abstractmethod
     def cancel_order(self):
+        pass
+
+    @abstractmethod
+    def cancel_all_order(self):
         pass
 
     @abstractmethod

@@ -33,16 +33,17 @@ class TradingStrategy:
         self.peaks = []
         self.troughs = []
         self.smoothed_prices = []
-        self.model = joblib.load(
-            "training_engine/outputs/logistic_regression_model.pkl"
-        )
+        self.model = joblib.load("training_engine/outputs/logistic_regression_model_updated.pkl")
 
     def collect_new_data(self):
         new_rows = []
         while not self.queue.empty():
             data_point = self.queue.get()
-            new_row = {"Timestamp": data_point[0], "Price": data_point[1]}
-            new_rows.append(new_row)
+            if data_point[1] != "":
+                new_row = {"Timestamp": data_point[0], "Price": float(data_point[1])}
+                new_rows.append(new_row)
+            else:
+                print("nope something wrong with price")
 
         if new_rows:
             new_data = pd.DataFrame(new_rows)
@@ -63,10 +64,10 @@ class TradingStrategy:
             return
 
         # Convert 'Timestamp' to datetime format unconditionally
-        self.raw_data['Timestamp'] = pd.to_datetime(self.raw_data['Timestamp'])
+        self.raw_data["Timestamp"] = pd.to_datetime(self.raw_data["Timestamp"])
 
-        if 'Timestamp' not in self.raw_data.index.names:
-            self.raw_data.set_index('Timestamp', inplace=True)
+        if "Timestamp" not in self.raw_data.index.names:
+            self.raw_data.set_index("Timestamp", inplace=True)
 
         self.raw_data.index = pd.to_datetime(self.raw_data.index)
 
@@ -82,8 +83,7 @@ class TradingStrategy:
 
         try:
             # Resample the data by minute and compute OHLC
-            ohlc = self.raw_data['Price'].resample('S').ohlc()
-            # print("ohlc: ", ohlc)
+            ohlc = self.raw_data["Price"].resample("S").ohlc()
         except:
             return
 
@@ -95,11 +95,11 @@ class TradingStrategy:
 
         # # Append or update the CSV file instead of rewriting it entirely
         # ohlc.to_csv('ohlc_minutes.csv', mode='a', header=not file_exists)
-        ohlc.to_csv('ohlc_seconds.csv')
+        print("???????????????????????????????????????do i even reach here")
+        ohlc.to_csv("ohlc_seconds.csv")
 
         # Display the resulting OHLC values
         # print("OHLC data: ", ohlc)
-
 
     def analyze_data(self):
         self.data = pd.read_csv(self.file_path)
@@ -111,7 +111,7 @@ class TradingStrategy:
         # print(self.data.head(10))
 
         # Specifically checking if any of the price columns still have NaN
-        if self.data[['Open', 'High', 'Low', 'Close']].isnull().any().any():
+        if self.data[["Open", "High", "Low", "Close"]].isnull().any().any():
             print("Incomplete data, skipping analysis.")
             return
         self.calculate_daily_percentage_change()
@@ -417,7 +417,6 @@ class TradingStrategy:
             # print("MINUTESSINCEPEAK:", self.data["MinutesSincePeak"])
             # print("MinutesSinceTrough: ", self.data["MinutesSinceTrough"])
 
-
     def calculate_first_second_order_derivatives(self):
         # Calculate first and second order derivatives for selected features
         for feature in ["KalmanFilterEst", "Short_Moving_Avg", "Long_Moving_Avg"]:
@@ -522,9 +521,9 @@ class TradingStrategy:
             # 'Currency_Account_difference'
         ]
 
-       #  ['Timestamp', 'Price', 'isLocalPeak', 'isLocalTrough', 'Label',
-       # 'MinutesSincePeak', 'MinutesSinceTrough', 'PriceChangeSincePeak',
-       # 'PriceChangeSinceTrough', 'FourierSignalSell', 'FourierSignalBuy']
+        #  ['Timestamp', 'Price', 'isLocalPeak', 'isLocalTrough', 'Label',
+        # 'MinutesSincePeak', 'MinutesSinceTrough', 'PriceChangeSincePeak',
+        # 'PriceChangeSinceTrough', 'FourierSignalSell', 'FourierSignalBuy']
         self.X_train = self.train_data[feature_set]
 
         # ].iloc[:self.split_idx]
@@ -581,10 +580,10 @@ class TradingStrategy:
         try:
             output = self.model.predict(test_data)[-1:]
             price = self.data["Open"][-1:].iloc[-1]
-            
+
             current_datetime = datetime.datetime.now()
             # Format the datetime string
-            formatted_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            formatted_datetime = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
             # print("check output: ", output, "price: ", price)
             action = (output[0], price, formatted_datetime)
             print("action: ", action)

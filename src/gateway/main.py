@@ -91,6 +91,8 @@ class TradeExecutor:
         self.api_secret = api_secret
         self.testnet = testnet
         self._exchange_name = name
+        # callbacks
+        self._exec_callbacks = []
 
         # this is a loop and dedicated thread to run all async concurrent tasks
         self._loop = asyncio.new_event_loop()
@@ -137,10 +139,10 @@ class TradeExecutor:
                 (api_url + uri_path), headers=headers, data=payload, timeout=1
             )  # post trade
             result = req.json()  # response
-            self.log_trade_execution(
-                result, "submitted"
-            ) if "code" not in result.keys() else self.log_trade_execution(
-                result["msg"], "failed"
+            (
+                self.log_trade_execution(result, "submitted")
+                if "code" not in result.keys()
+                else self.log_trade_execution(result["msg"], "failed")
             )
             return True
 
@@ -159,10 +161,10 @@ class TradeExecutor:
             }
             req = requests.delete((api_url + uri_path), params=params, headers=headers)
             result = req.json()  # response
-            self.log_trade_execution(
-                result, "submitted"
-            ) if "code" not in result.keys() else self.log_trade_execution(
-                result["msg"], "failed"
+            (
+                self.log_trade_execution(result, "submitted")
+                if "code" not in result.keys()
+                else self.log_trade_execution(result["msg"], "failed")
             )
             return True
 
@@ -272,6 +274,23 @@ class TradeExecutor:
                     order_event.last_filled_quantity = last_filled_qty
                     self.log_trade_execution(order_event, "filled")
 
+                # should have a callback just in case
+                if self._exec_callbacks:
+                    # notify callbacks
+                    for _callback in self._exec_callbacks:
+                        print(
+                            "****************** EXECUTING CALLBACK ******************"
+                        )
+                        _callback()
+
+    def register_exec_callback(self, callback):
+        print("################ REGISTERING CALLBACK ################")
+        self._exec_callbacks.append(callback)
+
+
+load_dotenv(dotenv_path="../.env")
+API_KEY = os.getenv("API_KEY")
+API_SECRET = os.getenv("API_SECRET")
 
 load_dotenv(dotenv_path="../.env")
 API_KEY = os.getenv("API_KEY")
