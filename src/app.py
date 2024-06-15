@@ -21,7 +21,9 @@ import random
 
 # this is offset to timestamp, ensure it is in sync with server
 offset = 15000
-
+MAX_OPEN_ORDER_COUNT = 1
+MAX_OPEN_ORDER_LIFE_SECONDS =30
+ORDER_SIZE = 0.002
 
 class ExecManager:
     def __init__(self, tradeExecutorObj, bookKeeperObj, restGateway) -> None:
@@ -64,6 +66,7 @@ class ExecManager:
             6. if risk say doable --> send to trade executor
             """
 
+            # TODO: CHECK THE NEED TO LIQUIDATE OR NOT
             print("CALL BOOK FUNCTION")
             print("CALL RISK FUNCTION")
 
@@ -72,7 +75,7 @@ class ExecManager:
             print(liquidate_approval)
 
             # if we get approval to liquidate
-            if liquidate_approval > 8 or self.reattempt_liquidate:
+            if liquidate_approval > 9 or self.reattempt_liquidate:
                 print(f"we will be liquidating all {liquidate_approval}")
                 response = self.restGateway.time()
                 if response != None:
@@ -139,7 +142,7 @@ class ExecManager:
                     response = self.restGateway.time()
 
                     # not sure where to put this
-                    quantity = 0.002
+                    quantity = ORDER_SIZE
 
                     if response != None:
                         servertime = int(response["serverTime"])
@@ -153,16 +156,16 @@ class ExecManager:
                         )
                         print(final_check_price)
                         # check if final_check price is within x% of our limit price, i set x at 0.5%
-                        if abs(limit_price - final_check_price) / limit_price < 0.005:
-                            order_dollar_amt = 0.002 * limit_price
+                        if abs(limit_price - final_check_price) / limit_price < 0.020:
+                            order_dollar_amt = ORDER_SIZE * limit_price
 
-                            # call risk, check this order
-                            # IF BUY    : check size OK, we have funds to buy
-                            # IF SELL   : check size OK, we have position to cover
-                            # CHECK ALSO HOW MANY OPEN ORDERS WE HAVE !
+                            # check can buy?
                             if direction == "BUY":
+                                # TODO: CALL THE RISK MANAGER CHECK CAN BUY
                                 approval = 1
+                            # check can sell
                             elif direction == "SELL":
+                                # TODO : CALL THE RISK MANAGER CHECK CAN SELL
                                 current_position_resp = (
                                     self.restGateway.get_position_info(
                                         "BTCUSDT", servertime
@@ -173,6 +176,7 @@ class ExecManager:
                                 )
                                 if position_amt == 0:
                                     print("POSITION IS ZERO, NOT APPROVED TO SELL")
+                                    # TODO: INCASE I FORGET, THIS SHOULD BE 0 BECAUSE NO ALLOW SHORT
                                     approval = 0
                                 else:
                                     approval = 1
@@ -181,26 +185,45 @@ class ExecManager:
                                 print("invalid direction")
 
                             if approval:
-                                # I try LIMIT ORDER ya
-                                data = {
-                                    "symbol": "BTCUSDT",
-                                    "price": limit_price,
-                                    "side": direction,
-                                    "type": "LIMIT",
-                                    "quantity": 0.002,
-                                    "timestamp": servertime - offset,
-                                    "recvWindow": 60000,
-                                    "timeinforce": "GTC",
-                                }
-                                print(data)
-                                self.tradeExecutor.execute_trade(data, "trade")
-                                print("my limit price: ", limit_price)
-                                self.bookKeeper.update_bookkeeper(datetime.now(), limit_price)
-                                get_pnl = self.bookKeeper.return_historical_data()
-                                print("******return_historical_data******\n", get_pnl)
-                                get_pnl.to_csv("historical_data.csv")
+                                # before send order, check if we can actually send an order
+                                current_open_orders = self.restGateway.get_all_open_orders("BTCUSDT", servertime)
+                                if len(current_open_orders) >= MAX_OPEN_ORDER_COUNT:
+                                    # see if we can cancel
+                                    for x in current_open_orders:
+                                        servertime_dt = datetime.fromtimestamp(servertime/1000)
+                                        x_dt = datetime.fromtimestamp(x["time"]/1000)
+                                        timediff = servertime_dt- x_dt
+                                        timediff_seconds = timediff.total_seconds()     
+                                        print(f"the time diff is {timediff_seconds}")
+                                        
+                                        if  timediff_seconds > MAX_OPEN_ORDER_LIFE_SECONDS:
+                                            self.restGateway.cancel_order(
+                                                "BTCUSDT", servertime,x["orderId"]
+                                            )
+                                        else:
+                                            print("NO CANCELLABLE ORDERS")
+                                
+                                # THIS IS TERRIBLE BTW
+                                if len(current_open_orders) < MAX_OPEN_ORDER_COUNT:
+                                    data = {
+                                        "symbol": "BTCUSDT",
+                                        "price": limit_price,
+                                        "side": direction,
+                                        "type": "LIMIT",
+                                        "quantity": ORDER_SIZE,
+                                        "timestamp": servertime - offset,
+                                        "recvWindow": 60000,
+                                        "timeinforce": "GTC",
+                                    }
+                                    print(data)
+                                    self.tradeExecutor.execute_trade(data, "trade")
+                                    print("my limit price: ", limit_price)
+                                    self.bookKeeper.update_bookkeeper(datetime.now(), limit_price)
+                                    get_pnl = self.bookKeeper.return_historical_data()
+                                    print("******return_historical_data******\n", get_pnl)
+                                    get_pnl.to_csv("historical_data.csv")
                         else:
-                            print("PRICE HAS MOVED SIGNIFICANTLY, IGNORE")
+                            print(f"PRICE HAS MOVED SIGNIFICANTLY, IGNORE {limit_price} vs {final_check_price}")
                 else:
                     print("THIS IS DOGSHIT IF NESTING, MODEL SAYS NOTHING")
 
@@ -223,6 +246,7 @@ if __name__ == "__main__":
     symbol = "BTCUSDT"
     api_key = API_KEY
     api_secret = API_SECRET
+
     # print("1api_key: ", api_key)
     # print("1api_secret: ", api_secret)
 
@@ -236,7 +260,7 @@ if __name__ == "__main__":
         api_key,
         api_secret,
     )
-
+    print(api_key)
     # 3. create EdJacob trade executor object. Will call the TradeExecutor.connect in the Exec Manager constructor
     print("instantiate trade executor")
     myTradeExecutor = TradeExecutor(symbol, api_key, api_secret)
