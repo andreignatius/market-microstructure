@@ -41,3 +41,7 @@ class AbstractRESTGateway(ABC):
     @abstractmethod
     def modify_order(self):
         pass
+    
+    @abstractmethod
+    def get_all_open_orders(self):
+        pass
