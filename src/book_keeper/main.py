@@ -56,6 +56,13 @@ class BookKeeper:
         # Return last record in self.historical_position
         return self.historical_data['RealizedProfit'].iloc[-1]
 
+    @property
+    def get_wallet_balance(self):
+        
+        # Return last record in self.historical_position
+        return self.historical_data['AvailableBalance'].iloc[-1]
+
+
     def update_bookkeeper(self, date, middle_price):
 
         # 1. Append date and middle_price to df market prices
