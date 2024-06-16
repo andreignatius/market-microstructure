@@ -17,7 +17,7 @@ class BookKeeper:
         self._api_key = api_key
         self._api_secret = api_secret
         self.symbol = symbol
-        # self.initial_cash = initial_cash
+        
         self.market_prices = pd.DataFrame(columns=["Date", "Symbol", "Price"])
         
         self.historical_data = pd.DataFrame(
@@ -41,6 +41,29 @@ class BookKeeper:
         )
         
         self.market_prices = pd.DataFrame(columns=["Date", "Symbol", "Price"])
+        
+        timestamp = int(time.time() * 1000)
+        params = {'timestamp': timestamp}
+        
+        query_string = urlencode(params)
+    
+        # signature
+        signature = hmac.new(self._api_secret.encode("utf-8"), query_string.encode("utf-8"), hashlib.sha256).hexdigest()
+    
+        # url
+        url = self.BASE_URL + '/fapi/v2/account' + "?" + query_string + "&signature=" + signature
+    
+        # post request
+        session = requests.Session()
+        session.headers.update(
+            {"Content-Type": "application/json;charset=utf-8", "X-MBX-APIKEY": self._api_key}
+        )
+        response = session.get(url=url, params={})
+    
+        # get order id
+        response_map = response.json()        
+        self.initial_cash = response_map['availableBalance']
+        
         
     # @property
     # def get_initial_cash(self):
@@ -108,7 +131,7 @@ class BookKeeper:
         temp = pd.Series(data = [pd.to_datetime(int(time.time() * 1000), unit='ns'), 
                                  float(response_map['totalWalletBalance']),
                                  float(response_map['availableBalance']),
-                                 float(response_map['totalWalletBalance']) - float(response_map['availableBalance']), 
+                                 float(response_map['totalWalletBalance']) - float(self.initial_cash), 
                                  float(response_map['totalUnrealizedProfit'])
                                 ],
                             index = ["Timestamp", 'WalletBalance', "AvailableBalance", "RealizedProfit", "UnrealizedProfit"])
@@ -153,3 +176,4 @@ class BookKeeper:
     
     def return_historical_positions(self):
         return self.historical_positions
+    
