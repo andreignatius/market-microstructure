@@ -16,6 +16,7 @@ class RiskManager:
         self.greeks = {}  # Options trading might require tracking of Greeks
 
     def check_available_balance(self,trade):
+        # trade is total dollar buy amount
         current_available_balance = self.book_keeper.get_wallet_balance()
         historical_data_df = self.book_keeper.return_historical_data()
         current_portfolio_balance = historical_data_df['WalletBalance'].iloc[-1]
@@ -47,6 +48,11 @@ class RiskManager:
         
         return last_buy_price
 
+    def get_current_btc_inventory(self):
+        historical_positions_df = self.book_keeper.return_historical_positions()
+        current_btc_inventory = historical_positions_df['PositionAmt'].iloc[-1]
+        return current_btc_inventory
+
     def trigger_stop_loss(self):
         last_buy_price = self.get_last_buy_price()
         if last_buy_price is None or last_buy_price <= 0:
@@ -55,10 +61,9 @@ class RiskManager:
 
         market_price_df = self.book_keeper.return_historical_market_prices()
         latest_market_price = market_price_df['Price'].iloc[-1]
-        historical_positions_df = self.book_keeper.return_historical_positions()
-        current_btc_inventory = historical_positions_df['PositionAmt'].iloc[-1]
+        current_btc_inventory = self.get_current_btc_inventory()
 
-        stoploss_threshold = 0.02
+        stoploss_threshold = 0.02 # Set stoploss threshold here
         stoploss_limit_value = (1-stoploss_threshold) * last_buy_price
 
         if current_btc_inventory > 0:
@@ -68,34 +73,36 @@ class RiskManager:
                 return False # do nothing
         else:
             return False # No inventory to liquidate
-            
+    
+    # def trigger_drawdown_liquidation(self):
+    #     daily_drawdown = 
 
-    def check_position(self,sellrequest):
-        #sellrequest is limit sell order (in usdt)
-        trade_balance_df = self.book_keeper.return_historical_positions()
-        current_trade_balance = trade_balance_df['PositionAmt'].iloc[-1] * # trade balance is fraction of BTC
-        if sellrequest < current_trade_balance: # assuming sellrequest is in $ amount
+    def check_short_position(self,ordersize):
+        #ordersize is limit sell order in BTC
+        current_btc_inventory = self.get_current_btc_inventory()
+        if ordersize <= current_btc_inventory: 
             return True # Allow sell
         else: 
             print('No short position allowed')
             return False # don't allow short position
-
     
-    def check_buy_order_value(self,trade):
+    def check_buy_order_value(self, buyprice):
+        # buyprice is limit price for buy order
         market_price_df = self.book_keeper.return_historical_market_prices()
         latest_market_price = market_price_df['Price'].iloc[-1]
         upper_bound_price_ratio = 1.2 # Can adjust the tolerance, upper bound assuming buy order
-        if trade <= latest_market_price * upper_bound_price_ratio:
+        if buyprice <= latest_market_price * upper_bound_price_ratio:
             return True # Allow buy order
         else:
             print('Check buy order value')
             return False
 
-    def check_sell_order_value(self,sellrequest):
+    def check_sell_order_value(self,sellprice):
+        # sellprice is limit price for sell order
         market_price_df = self.book_keeper.return_historical_market_prices()
         latest_market_price = market_price_df['Price'].iloc[-1]
         lower_bound_price_ratio = 0.9 # Can adjust the tolerance, lower bound for sell order
-        if sellrequest <= latest_market_price * lower_bound_price_ratio:
+        if sellprice <= latest_market_price * lower_bound_price_ratio:
             return True # Allow sell order
         else:
             print('Check sell order value')
