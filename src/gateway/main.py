@@ -104,15 +104,6 @@ class TradeExecutor:
         self._loop = asyncio.new_event_loop()
         self._loop_thread = Thread(target=self._run_async_tasks, daemon=True, name=name)
 
-        # Set up logging to file
-        logging.basicConfig(
-            level=logging.INFO,  # Set log level to INFO
-            format='%(asctime)s - %(levelname)s - %(message)s',  # Define the log format
-            datefmt='%Y-%m-%d %H:%M:%S',  # Timestamp format
-            filename=self.log_filename,  # Use the dynamically generated filename
-            filemode='w'  # Open the file in write mode
-        )
-
     def signature(self, data: dict, secret: str) -> str:
         """
         signature is required to authenticate the request
@@ -185,6 +176,19 @@ class TradeExecutor:
             print("++++++++++++ATTEMPT CANCEL++++++++++++", result)
             return True
 
+    def write_log(self, message, log_directory="./logs"):
+        """
+        Writes a log message to a log file named with the current date and time.
+        """
+        if not os.path.exists(log_directory):
+            os.makedirs(log_directory)
+
+        filepath = os.path.join(log_directory, self.log_filename)
+        
+        with open(filepath, 'a') as file:
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            file.write(f"{timestamp} - {message}\n")
+
     def log_trade_execution(self, result, status):
         """
         Log details of the executed trade for auditing and monitoring purposes.
@@ -214,12 +218,14 @@ class TradeExecutor:
         elif status == "failed":
             # logging.info(result)
             print("********FAILED******")
-            logging.info("ORDER FAILED - logging to file: {}".format(self.log_filename))
+            logging.info("ORDER FAILED : {}".format(result))
+            self.write_log(result)
             return True
 
         elif status == "filled":
             print("********FILLED******")
-            logging.info("ORDER FILLED - logging to file: {}".format(self.log_filename))
+            logging.info("ORDER FILLED : {}".format(result))
+            self.write_log(result)
             return True
 
     ############## self.manager.give_trade(result) # give trade back to manager
