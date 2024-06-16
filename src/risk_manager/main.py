@@ -95,7 +95,7 @@ class RiskManager:
         # buyprice is limit price for buy order
         market_price_df = self.book_keeper.return_historical_market_prices()
         latest_market_price = market_price_df['Price'].iloc[-1]
-        upper_bound_price_ratio = 1.2 # Can adjust the tolerance, upper bound assuming buy order
+        upper_bound_price_ratio = 1.1 # Set upper bound ratio here
         if buyprice <= latest_market_price * upper_bound_price_ratio:
             return True # Allow buy order
         else:
