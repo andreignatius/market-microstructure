@@ -15,66 +15,102 @@ class RiskManager:
         self.risk_metrics = {}
         self.greeks = {}  # Options trading might require tracking of Greeks
 
-    def check_balance(self,trade):
-        current_balance = self.book_keeper.get_balance()
-        initial_balance = self.book_keeper.get_initial_balance()
-        reserve_ratio = 0.10
-        balance_limit = reserve_ratio * initial_balance
+    def check_available_balance(self,trade):
+        current_available_balance = self.book_keeper.get_wallet_balance()
+        historical_data_df = self.book_keeper.return_historical_data()
+        current_portfolio_balance = historical_data_df['WalletBalance'].iloc[-1]
+        minimum_cash_ratio = 0.25 # Set our desired minimum cash ratio
+        post_trade_cash_ratio = (current_available_balance - trade) / current_portfolio_balance # assuming buy order
+        # if post_trade_cash_ratio >= minimum cash ratio, continue trade, otherwise don't trade
+        if post_trade_cash_ratio >= minimum_cash_ratio:
+            return True # Allow buy order
+        else: 
+            return False 
+        
+    def get_available_tradable_balance(self):
+        current_available_balance = self.book_keeper.get_wallet_balance()
+        minimum_cash_ratio = 0.25 # Set our desired minimum cash ratio
+        available_trade_balance = (1-minimum_cash_ratio) * current_available_balance
+        return available_trade_balance
+    
+    def get_last_buy_price(self):
+        last_buy_price = None
+        historical_positions_df = self.book_keeper.return_historical_positions()
+        for i in range(1, len(historical_positions_df)):
+            # Check if the 'PositionAmt' has increased compared to the previous row
+            if historical_positions_df['PositionAmt'].iloc[i] > historical_positions_df['PositionAmt'].iloc[i - 1]:
+                last_buy_price = historical_positions_df['entryPrice'].iloc[i]
+        # To handle NA or 0 values
+        if last_buy_price is None or last_buy_price <= 0:
+            print('Invalid last buy price')
+            return None
+        
+        return last_buy_price
 
-        post_trade_balance = current_balance - trade # assuming buy order
-        # if post_trade_balance > balance_limit, continue trade, otherwise don't trade
-        if post_trade_balance > balance_limit:
-            print('Proceed with trade')
-            return True
-        else: return False # Don't trade
+    def trigger_stop_loss(self):
+        last_buy_price = self.get_last_buy_price()
+        if last_buy_price is None or last_buy_price <= 0:
+            print("Cannot trigger stop loss due to invalid last buy price")
+            return False  # Do not trigger stop loss if last_buy_price is invalid
 
-    def check_PnL(self):
-        portfolio_value = self.book_keeper.get_WalletBalance() # in the historical_data dataframe, ['WalletBalance'] dataframe
+        market_price_df = self.book_keeper.return_historical_market_prices()
+        latest_market_price = market_price_df['Price'].iloc[-1]
+        historical_positions_df = self.book_keeper.return_historical_positions()
+        current_btc_inventory = historical_positions_df['PositionAmt'].iloc[-1]
+
+        stoploss_threshold = 0.02
+        stoploss_limit_value = (1-stoploss_threshold) * last_buy_price
+
+        if current_btc_inventory > 0:
+            if latest_market_price <= stoploss_limit_value:
+                return True # Liquidate positions now
+            else:
+                return False # do nothing
+        else:
+            return False # No inventory to liquidate
+            
 
     def check_position(self,sellrequest):
-        current_trade_balance = self.book_keeper.get_positionamount() # trade balance is amnt of BTC in $
+        #sellrequest is limit sell order (in usdt)
+        trade_balance_df = self.book_keeper.return_historical_positions()
+        current_trade_balance = trade_balance_df['PositionAmt'].iloc[-1] * # trade balance is fraction of BTC
         if sellrequest < current_trade_balance: # assuming sellrequest is in $ amount
-            return True # allow sell
-        else: return False # don't allow short position
-        
-    # Other pre-trade controls
-    def check_order_size(tradesize):
-        order_size_control = 0.02 # insert amount of BTC here
-        if tradesize == order_size_control:
-            return True 
+            return True # Allow sell
         else: 
-            print('Check order size')
-            return False
+            print('No short position allowed')
+            return False # don't allow short position
+
     
-    def check_order_value(self,trade):
+    def check_buy_order_value(self,trade):
         market_price_df = self.book_keeper.return_historical_market_prices()
         latest_market_price = market_price_df['Price'].iloc[-1]
         upper_bound_price_ratio = 1.2 # Can adjust the tolerance, upper bound assuming buy order
         if trade <= latest_market_price * upper_bound_price_ratio:
-            return True
+            return True # Allow buy order
         else:
-            print('Check order value')
+            print('Check buy order value')
             return False
-        
+
+    def check_sell_order_value(self,sellrequest):
+        market_price_df = self.book_keeper.return_historical_market_prices()
+        latest_market_price = market_price_df['Price'].iloc[-1]
+        lower_bound_price_ratio = 0.9 # Can adjust the tolerance, lower bound for sell order
+        if sellrequest <= latest_market_price * lower_bound_price_ratio:
+            return True # Allow sell order
+        else:
+            print('Check sell order value')
+            return False        
 
     def check_symbol(tradesymbol):
         ticker_control = 'BTCUSDT' # Set what ticker we want to trade to prevent ordering the wrong asset
         if tradesymbol == ticker_control:
-            return True
+            return True # Allow buy/sell order
         else:
             print('Check trade symbol')
             return False
 
 
-
-
-
-
-
-
-
-
-
+## Unused functions
 
     def update_risk_metrics(self):
         """
@@ -152,3 +188,4 @@ class RiskManager:
         """
         # TODO: Implement the logic to execute stop-loss orders based on risk parameters
         pass
+
