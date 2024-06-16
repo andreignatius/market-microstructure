@@ -215,7 +215,8 @@ class ExecManager:
                                         "recvWindow": 60000,
                                         "timeinforce": "GTC",
                                     }
-                                    print(data)
+                                    print("just before trade executor data: ", data)
+                                    print("just before trade executor output: ", output)
                                     self.tradeExecutor.execute_trade(data, "trade")
                                     print("my limit price: ", limit_price)
                                     self.bookKeeper.update_bookkeeper(datetime.now(), limit_price)
