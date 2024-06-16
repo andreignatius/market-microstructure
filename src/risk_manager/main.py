@@ -74,8 +74,13 @@ class RiskManager:
         else:
             return False # No inventory to liquidate
     
-    # def trigger_drawdown_liquidation(self):
-    #     daily_drawdown = 
+    def trigger_trading_halt(self):
+        daily_maxdrawdown = self.book_keeper.calculate_max_drawdown()
+        daily_mdd_threshold = -0.05 # Set daily maxdrawdown threshold here
+        if daily_maxdrawdown <= daily_maxdrawdown:
+            return True # Do not trade
+        else:
+            return False # Continue trading
 
     def check_short_position(self,ordersize):
         #ordersize is limit sell order in BTC
