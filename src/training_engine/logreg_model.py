@@ -17,7 +17,13 @@ from base_model import BaseModel
 
 
 class LogRegModel(BaseModel):
-    def __init__(self, file_path):
+    def __init__(self, 
+        file_path,
+        train_start="2024-04-14",
+        train_end="2024-05-01",
+        test_start="2024-05-02",
+        test_end="2024-05-10",
+        ):
         super().__init__(file_path)
         # Elastic Net parameters
         l1_ratio = 0.5  # L1 weight in the range [0,1]. 0 is L2, 1 is L1.

@@ -5,7 +5,7 @@ class BacktestTradingStrategy:
         data,
         start_cash=10000,
         trading_lot=7500,
-        stop_loss_threshold=0.004,
+        stop_loss_threshold=0.01,
         leverage_factor=1,
         margin_call_threshold=0.5,
         annual_interest_rate=0.0,
@@ -36,6 +36,8 @@ class BacktestTradingStrategy:
             usd_btc_spot_rate = row[1]["Close"]
             current_date = row[1]["Timestamp"]
             print("spot rate: ", usd_btc_spot_rate, "prediction: ", prediction)
+            if self.buy_price is not None:
+                print("spot / buy: ", usd_btc_spot_rate / self.buy_price)
             # daily_change_percentage = row[1]['Daily_Change_Open_to_Close']
 
             # if self.btc_inventory > 0:
@@ -53,13 +55,15 @@ class BacktestTradingStrategy:
             elif (
                 prediction == "Sell"
                 and self.btc_inventory > 0
-                and (
-                    self.buy_price is None
-                    or (
-                        self.buy_price is not None
-                        and usd_btc_spot_rate > self.buy_price * 1.003
-                    )
-                )
+                and ( self.buy_price is not None 
+                      and not usd_btc_spot_rate < self.buy_price * 1.01)
+                # and (
+                #     self.buy_price is None
+                #     or (
+                #         self.buy_price is not None
+                #         and usd_btc_spot_rate > self.buy_price * 1.005
+                #     )
+                # )
             ):
                 self._sell_btc(usd_btc_spot_rate, current_date)
 
@@ -172,8 +176,8 @@ class BacktestTradingStrategy:
 
     def _check_stop_loss(self, usd_btc_spot_rate, date):
         if self.btc_inventory > 0:
-            change_percentage = abs(usd_btc_spot_rate - self.buy_price) / self.buy_price
-            if change_percentage * self.leverage_factor > self.stop_loss_threshold:
+            change_percentage = (usd_btc_spot_rate - self.buy_price) / self.buy_price
+            if change_percentage * self.leverage_factor <  -self.stop_loss_threshold:
                 self._sell_btc(usd_btc_spot_rate, date, forced=True)
                 return True
         return False
