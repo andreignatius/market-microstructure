@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import json
 import logging
+from datetime import datetime
 import os
 import time
 from enum import Enum
@@ -87,6 +88,9 @@ class TradeExecutor:
 
     def __init__(self, manager, api_key, api_secret, name="Binance", testnet=True):
         self.manager = manager
+        # Create a filename with the current date and time
+        self.log_filename = datetime.now().strftime("logs_%Y-%m-%d_%H-%M-%S.txt")
+
         self.api_key = api_key
         self.api_secret = api_secret
         print("CHECK MY API_KEY: ", api_key)
@@ -146,6 +150,7 @@ class TradeExecutor:
                 if "code" not in result.keys()
                 else self.log_trade_execution(result["msg"], "failed")
             )
+            print("++++++++++++ATTEMPT TRADE++++++++++++++", result)
             return True
 
         elif direction == "cancel":
@@ -168,7 +173,21 @@ class TradeExecutor:
                 if "code" not in result.keys()
                 else self.log_trade_execution(result["msg"], "failed")
             )
+            print("++++++++++++ATTEMPT CANCEL++++++++++++", result)
             return True
+
+    def write_log(self, message, log_directory="./logs"):
+        """
+        Writes a log message to a log file named with the current date and time.
+        """
+        if not os.path.exists(log_directory):
+            os.makedirs(log_directory)
+
+        filepath = os.path.join(log_directory, self.log_filename)
+        
+        with open(filepath, 'a') as file:
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            file.write(f"{timestamp} - {message}\n")
 
     def log_trade_execution(self, result, status):
         """
@@ -197,11 +216,16 @@ class TradeExecutor:
                 return True
 
         elif status == "failed":
-            logging.info(result)
+            # logging.info(result)
+            print("********FAILED******")
+            logging.info("ORDER FAILED : {}".format(result))
+            self.write_log(result)
             return True
 
         elif status == "filled":
-            logging.info(result)
+            print("********FILLED******")
+            logging.info("ORDER FILLED : {}".format(result))
+            self.write_log(result)
             return True
 
     ############## self.manager.give_trade(result) # give trade back to manager

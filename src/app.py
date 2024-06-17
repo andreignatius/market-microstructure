@@ -51,6 +51,7 @@ class ExecManager:
 
     def execStrat(self, s):
         check = s["lastprice"]
+        print(f"what is S even {check}")
         # what is S even {'lastprice': '', 'lastquantity': '', 'bestbidprice': '67150.00', 'bestbidquantity': '3.000', 'bestaskprice': '67430.90', 'bestaskquantity': '6.000', 'datetime': datetime.datetime(2024, 6, 1, 19, 13, 48, 104897)}
 
         if s["lastprice"] != "":
@@ -131,6 +132,8 @@ class ExecManager:
                 if response != None:
                     # clear the reattempt liquidate flag
                     self.reattempt_liquidate = False
+
+                    servertime = int(response["serverTime"])
                     # 1. CANCEL ALL STANDING ORDERS
                     cancel_resp = self.restGateway.cancel_all_order(
                         "BTCUSDT", servertime
@@ -138,6 +141,9 @@ class ExecManager:
                     print(cancel_resp)
 
                     # 2. CLOSE ALL POSITIONS
+                    current_position_resp = self.restGateway.get_position_info(
+                        "BTCUSDT", servertime
+                    )
                     if current_position_resp != None:
                         position_amt = float(current_position_resp[0]["positionAmt"])
                         if position_amt > 0:
@@ -151,7 +157,11 @@ class ExecManager:
                             }
                             print(liquidate_data)
                             self.tradeExecutor.execute_trade(liquidate_data, "trade")
+                            print(
+                                "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                            )
                         else:
+                            print("NO POSITION TO LIQUIDATE")
                             print(
                                 "xxxxxxxxxxxxxxxxxxxxxxxxx NO POSITION TO LIQUIDATE xxxxxxxxxxxxxxxxxxxxxxxxx"
                             )
@@ -164,10 +174,11 @@ class ExecManager:
                 self.updateQueue(s)
                 self.strategy.collect_new_data()
                 self.strategy.aggregate_data()  # Only aggregate data, do not collect here
+                # if time_elapsed > 40:
                 output = (
                     self.strategy.analyze_data()
                 )  # analyse data and gather prediction
-
+                print("model output: ", output)
                 if output != None:
                     # create the order
                     direction = output[0].upper()
@@ -289,6 +300,8 @@ class ExecManager:
 
 def on_exec():
     print("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
+
+
 
 
 # create this app.py to serve as our actual strat file, the main.py is used by strategy already.
