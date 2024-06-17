@@ -11,7 +11,13 @@ from sklearn.utils import resample
 
 
 class BaseModel:
-    def __init__(self, file_path):
+    def __init__(self,
+        file_path,
+        train_start="2024-04-14",
+        train_end="2024-05-01",
+        test_start="2024-05-02",
+        test_end="2024-05-10",
+        ):
         self.file_path = file_path
         # self.model_type = model_type
         self.data = None
@@ -166,7 +172,7 @@ class BaseModel:
             reverse=True,
         )
         dominant_period_lengths = [i for i in dominant_period_lengths]
-        dominant_period_lengths = dominant_period_lengths[:5]
+        dominant_period_lengths = dominant_period_lengths[:20]
         print("dominant_period_lengths: ", dominant_period_lengths)
         # dominant_period_lengths = [15, 7, 5]
         print("check dominant_period_lengths: ", dominant_period_lengths)
