@@ -79,7 +79,38 @@ class ExecManager:
             # 2. UPDATE THE BOOK KEEPER
             self.bookKeeper.update_bookkeeper(the_date, check, servertime)
 
-            # 3. LIQUIDATE CHECK
+            # 3. CHECK ANY OLDER ORDERS NEED TO CANCEL OR NOT
+            # regardless of signal, check if there is any super old unfilled orders
+            print(
+                "XXXXXXXXXXXXXXXXXX   FIRST, LET US CHECK POSITION    XXXXXXXXXXXXXXXXXX"
+            )
+            current_open_orders = self.restGateway.get_all_open_orders(
+                "BTCUSDT", servertime
+            )
+            print(current_open_orders)
+            order_queue_ok = True
+            if len(current_open_orders) >= MAX_OPEN_ORDER_COUNT:
+                # see if we can cancel
+                for x in current_open_orders:
+                    servertime_dt = datetime.fromtimestamp(servertime / 1000)
+                    x_dt = datetime.fromtimestamp(x["time"] / 1000)
+                    timediff = servertime_dt - x_dt
+                    timediff_seconds = timediff.total_seconds()
+                    print(f"the time diff is {timediff_seconds}")
+
+                    if timediff_seconds > MAX_OPEN_ORDER_LIFE_SECONDS:
+                        print("CANCELLING ORDERS")
+                        self.restGateway.cancel_order(
+                            "BTCUSDT", servertime, x["orderId"]
+                        )
+                        order_queue_ok = True
+                    else:
+                        print("NO CANCELLABLE ORDERS")
+                        order_queue_ok = False
+            else:
+                order_queue_ok = True
+
+            # 4. LIQUIDATE CHECK
             stop_loss_trigger = self.riskManager.trigger_stop_loss()
             trading_halt_trigger = self.riskManager.trigger_trading_halt()
             print(
@@ -128,7 +159,7 @@ class ExecManager:
                     print("cannot get response from server !")
                     self.reattempt_liquidate = True
 
-            # if we do not get, then proceed as normal
+            # 5. PROCEED AS NORMAL IF NOT LIQUIDATED
             else:
                 self.updateQueue(s)
                 self.strategy.collect_new_data()
@@ -155,9 +186,9 @@ class ExecManager:
 
                     # get our gateway time before send order
                     response = self.restGateway.time()
+                    servertime = int(response["serverTime"])
 
                     if response != None:
-                        servertime = int(response["serverTime"])
                         order_quantity = 0
 
                         if direction == "BUY":
@@ -173,10 +204,17 @@ class ExecManager:
                             buy_price_check = self.riskManager.check_buy_order_value(
                                 limit_price
                             )  # get approval from buy price checking
+                            buy_position_check = (
+                                self.riskManager.check_buy_position()
+                            )  # get approval from position checking
                             print(
-                                f"buy_balance_check: {buy_balance_check} ,buy_price_check : {buy_price_check}"
+                                f"buy_balance_check: {buy_balance_check} ,buy_price_check : {buy_price_check}, buy_position_check{buy_position_check}"
                             )
-                            approval = buy_balance_check and buy_price_check
+                            approval = (
+                                buy_balance_check
+                                and buy_price_check
+                                and buy_position_check
+                            )
 
                         elif direction == "SELL":
                             current_position_resp = self.restGateway.get_position_info(
@@ -192,8 +230,11 @@ class ExecManager:
                             sell_price_check = self.riskManager.check_sell_order_value(
                                 limit_price
                             )  # get approval from sell price checking
+                            sell_position_check = (
+                                self.riskManager.check_sell_position()
+                            )  # get approval from position checking
                             print(
-                                f"short pos check: {short_pos_check} , sell_price_check : {sell_price_check}"
+                                f"short pos check: {short_pos_check} , sell_price_check : {sell_price_check}, sell_position_check:{sell_position_check}"
                             )
                             approval = short_pos_check and sell_price_check
                         elif direction == "HOLD":
@@ -203,35 +244,9 @@ class ExecManager:
                             approval = 0
                             print("invalid direction")
 
-                        print(f" {direction} --> ORDER QUANTITY {order_quantity}")
-
-                        # regardless of signal, check if there is any super old unfilled orders
-                        current_open_orders = self.restGateway.get_all_open_orders(
-                            "BTCUSDT", servertime
+                        print(
+                            f" {direction} --> ORDER QUANTITY {order_quantity}, approved ? {approval} and order queue {order_queue_ok}"
                         )
-                        order_queue_ok = True
-                        if len(current_open_orders) >= MAX_OPEN_ORDER_COUNT:
-                            # see if we can cancel
-                            for x in current_open_orders:
-                                servertime_dt = datetime.fromtimestamp(
-                                    servertime / 1000
-                                )
-                                x_dt = datetime.fromtimestamp(x["time"] / 1000)
-                                timediff = servertime_dt - x_dt
-                                timediff_seconds = timediff.total_seconds()
-                                print(f"the time diff is {timediff_seconds}")
-
-                                if timediff_seconds > MAX_OPEN_ORDER_LIFE_SECONDS:
-                                    print("CANCELLING ORDERS")
-                                    self.restGateway.cancel_order(
-                                        "BTCUSDT", servertime, x["orderId"]
-                                    )
-                                    order_queue_ok = True
-                                else:
-                                    print("NO CANCELLABLE ORDERS")
-                                    order_queue_ok = False
-                        else:
-                            order_queue_ok = True
 
                         if approval and order_queue_ok:
                             # THIS IS TERRIBLE BTW
@@ -259,6 +274,8 @@ class ExecManager:
                                     f"check historical position : {self.bookKeeper.historical_positions.tail(3)}"
                                 )
                                 get_pnl.to_csv("historical_data.csv")
+                        else:
+                            print("SORRY CANT TRADE")
                 else:
                     self.model_none_count = self.model_none_count + 1
                     if self.model_none_count >= MAX_MODEL_NONE_COUNT:
@@ -266,6 +283,7 @@ class ExecManager:
                         cancel_resp = self.restGateway.cancel_all_order(
                             "BTCUSDT", servertime
                         )
+                        print(f"CANCEL MODEL NONE: {cancel_resp}")
                     print(f"MODEL NONE COUNT VALUE = {self.model_none_count}")
 
 
