@@ -93,9 +93,9 @@ if __name__ == "__main__":
     model = LogRegModel(
         file_path="inputs/binance_btcusdt_1min_ccxt.csv",
         train_start="2024-04-14",
-        train_end="2024-05-01",
-        test_start="2024-05-02",
-        test_end="2024-05-10",
+        train_end="2024-05-31",
+        test_start="2024-06-01",
+        test_end="2024-06-16",
     )
     # model = LogRegModel(
     #     file_path="inputs/ohlc_24hrs.csv"

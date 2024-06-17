@@ -22,13 +22,13 @@ class BaseModel:
         # self.model_type = model_type
         self.data = None
 
-        self.train_start = train_start
-        self.train_end = train_end
-        self.test_start = test_start
-        self.test_end = test_end
+        # self.train_start = train_start
+        # self.train_end = train_end
+        # self.test_start = test_start
+        # self.test_end = test_end
 
-        self.train_start = pd.to_datetime(self.train_start)
-        self.train_end = pd.to_datetime(self.train_end)
+        # self.train_start = pd.to_datetime(self.train_start)
+        # self.train_end = pd.to_datetime(self.train_end)
 
         self.X = None
         self.y = None
