@@ -60,7 +60,7 @@ class BaseModel:
 
         # self.estimate_hurst_exponent()
         self.calculate_days_since_peaks_and_troughs()
-        # self.detect_fourier_signals()
+        self.detect_fourier_signals()
         self.calculate_first_second_order_derivatives()
 
         self.preprocess_data()
@@ -165,9 +165,10 @@ class BaseModel:
             set((self.fft_features.loc[:, "SecondsPerCycle"].values / 2).astype(int)),
             reverse=True,
         )
-        dominant_period_lengths = [i for i in dominant_period_lengths if i < 15]
-        # dominant_period_lengths = dominant_period_lengths[:5]
-        dominant_period_lengths = [15, 7, 5]
+        dominant_period_lengths = [i for i in dominant_period_lengths]
+        dominant_period_lengths = dominant_period_lengths[:5]
+        print("dominant_period_lengths: ", dominant_period_lengths)
+        # dominant_period_lengths = [15, 7, 5]
         print("check dominant_period_lengths: ", dominant_period_lengths)
         self.data["FourierSignalSell"] = self.data["MinutesSinceTrough"].isin(
             dominant_period_lengths
@@ -180,7 +181,7 @@ class BaseModel:
         print("FourierSignalSell: ", self.data["FourierSignalSell"])
         print("FourierSignalBuy: ", self.data["FourierSignalBuy"])
 
-    def detect_rolling_peaks_and_troughs(self, window_size=5):
+    def detect_rolling_peaks_and_troughs(self, window_size=30):
         # Initialize columns to store the results
         self.data["isLocalPeak"] = False
         self.data["isLocalTrough"] = False
@@ -191,15 +192,28 @@ class BaseModel:
 
             # Subset the data for the current window
             window_data = self.data["Close"][start_idx:end_idx]
-
+            threshold_height = np.mean(window_data) + 0.5 * np.std(window_data)  # Example threshold
+            print("threshold_height: ", threshold_height)
+            print("mean: ", np.mean(window_data))
+            print("std: ", np.std(window_data))
             # Find peaks
-            peaks, _ = find_peaks(window_data)
+            peaks, _ = find_peaks(window_data, height=threshold_height)
+            peaks = [ i for i in peaks if i >= 3 ]
+            print("peaks0: ", peaks)
+            if np.std(window_data) < 2.5:
+                peaks = []
+            print("peaks: ", peaks)
             peaks_global_indices = [start_idx + p for p in peaks]
             # print("peaks: ", peaks)
             self.data.loc[peaks_global_indices, "isLocalPeak"] = True
 
             # Find troughs by inverting the data
-            troughs, _ = find_peaks(-window_data)
+            troughs, _ = find_peaks(-window_data, height=-threshold_height)
+            troughs = [ i for i in troughs if i >= 3 ]
+            
+            if np.std(window_data) < 2.5:
+                troughs = []
+            print("troughs: ", troughs)
             troughs_global_indices = [start_idx + t for t in troughs]
             # print("troughs: ", troughs)
             self.data.loc[troughs_global_indices, "isLocalTrough"] = True

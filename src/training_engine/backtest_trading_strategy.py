@@ -53,13 +53,15 @@ class BacktestTradingStrategy:
             elif (
                 prediction == "Sell"
                 and self.btc_inventory > 0
-                and (
-                    self.buy_price is None
-                    or (
-                        self.buy_price is not None
-                        and usd_btc_spot_rate > self.buy_price * 1.003
-                    )
-                )
+                and ( self.buy_price is not None 
+                      and not usd_btc_spot_rate < self.buy_price * 1.004)
+                # and (
+                #     self.buy_price is None
+                #     or (
+                #         self.buy_price is not None
+                #         and usd_btc_spot_rate > self.buy_price * 1.005
+                #     )
+                # )
             ):
                 self._sell_btc(usd_btc_spot_rate, current_date)
 
@@ -172,8 +174,9 @@ class BacktestTradingStrategy:
 
     def _check_stop_loss(self, usd_btc_spot_rate, date):
         if self.btc_inventory > 0:
-            change_percentage = abs(usd_btc_spot_rate - self.buy_price) / self.buy_price
-            if change_percentage * self.leverage_factor > self.stop_loss_threshold:
+            change_percentage = (usd_btc_spot_rate - self.buy_price) / self.buy_price
+            # if change_percentage * self.leverage_factor > self.stop_loss_threshold:
+            if change_percentage < -self.stop_loss_threshold:
                 self._sell_btc(usd_btc_spot_rate, date, forced=True)
                 return True
         return False

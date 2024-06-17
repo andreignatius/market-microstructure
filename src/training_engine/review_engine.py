@@ -5,7 +5,7 @@ import joblib
 # from trading_strategy import TradingStrategy
 from backtest_trading_strategy import BacktestTradingStrategy
 from logreg_model import LogRegModel
-
+import json
 
 class ReviewEngine:
     """
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     #     test_end="2024-05-10",
     # )
     model = LogRegModel(
-        file_path="inputs/ohlc_3hrs.csv"
+        file_path="inputs/ohlc_24hrs.csv"
     )
     model.load_preprocess_data()  # Load and preprocess the data
     model.train_test_split_time_series()  # Split data into training and testing
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     transaction_costs_total.append(transaction_costs)
 
     # Output
-    print(trade_log)
+    print(json.dumps(trade_log,indent=4))
     print("num trades: ", len(trade_log))
     print(f"Final Portfolio Value Before Cost: {final_portfolio_value}")
     final_portfolio_value = final_portfolio_value - (interest_costs + transaction_costs)
