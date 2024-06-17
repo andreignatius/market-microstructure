@@ -22,7 +22,8 @@ import random
 # this is offset to timestamp, ensure it is in sync with server
 offset = 15000
 MAX_OPEN_ORDER_COUNT = 1
-MAX_OPEN_ORDER_LIFE_SECONDS = 30
+MAX_OPEN_ORDER_LIFE_SECONDS = 60
+MAX_MODEL_NONE_COUNT = 20
 
 
 class ExecManager:
@@ -39,6 +40,9 @@ class ExecManager:
         self.strategy = TradingStrategy(self.queue)
         self.tradeExecutor.connect()
         self.reattempt_liquidate = False
+
+        # keep track of model none
+        self.model_none_count = 0
 
     def updateQueue(self, s):
         output = (s["datetime"], s["lastprice"])
@@ -201,30 +205,30 @@ class ExecManager:
 
                         print(f" {direction} --> ORDER QUANTITY {order_quantity}")
 
-                        if approval:
-                            # before send order, check if we can actually send an order
-                            current_open_orders = self.restGateway.get_all_open_orders(
-                                "BTCUSDT", servertime
-                            )
-                            if len(current_open_orders) >= MAX_OPEN_ORDER_COUNT:
-                                # see if we can cancel
-                                for x in current_open_orders:
-                                    servertime_dt = datetime.fromtimestamp(
-                                        servertime / 1000
+                        # regardless of signal, check if there is any super old unfilled orders
+                        current_open_orders = self.restGateway.get_all_open_orders(
+                            "BTCUSDT", servertime
+                        )
+                        if len(current_open_orders) >= MAX_OPEN_ORDER_COUNT:
+                            # see if we can cancel
+                            for x in current_open_orders:
+                                servertime_dt = datetime.fromtimestamp(
+                                    servertime / 1000
+                                )
+                                x_dt = datetime.fromtimestamp(x["time"] / 1000)
+                                timediff = servertime_dt - x_dt
+                                timediff_seconds = timediff.total_seconds()
+                                print(f"the time diff is {timediff_seconds}")
+
+                                if timediff_seconds > MAX_OPEN_ORDER_LIFE_SECONDS:
+                                    print("CANCELLING ORDERS")
+                                    self.restGateway.cancel_order(
+                                        "BTCUSDT", servertime, x["orderId"]
                                     )
-                                    x_dt = datetime.fromtimestamp(x["time"] / 1000)
-                                    timediff = servertime_dt - x_dt
-                                    timediff_seconds = timediff.total_seconds()
-                                    print(f"the time diff is {timediff_seconds}")
+                                else:
+                                    print("NO CANCELLABLE ORDERS")
 
-                                    if timediff_seconds > MAX_OPEN_ORDER_LIFE_SECONDS:
-                                        print("CANCELLING ORDERS")
-                                        self.restGateway.cancel_order(
-                                            "BTCUSDT", servertime, x["orderId"]
-                                        )
-                                    else:
-                                        print("NO CANCELLABLE ORDERS")
-
+                        if approval:
                             # THIS IS TERRIBLE BTW
                             print(f"what is current {direction} : {order_quantity}")
                             if len(current_open_orders) < MAX_OPEN_ORDER_COUNT:
@@ -250,7 +254,13 @@ class ExecManager:
                                 )
                                 get_pnl.to_csv("historical_data.csv")
                 else:
-                    print("THIS IS DOGSHIT IF NESTING, MODEL SAYS NOTHING")
+                    self.model_none_count = self.model_none_count + 1
+                    if self.model_none_count >= MAX_MODEL_NONE_COUNT:
+                        print("possible model error? Cancel All orders")
+                        cancel_resp = self.restGateway.cancel_all_order(
+                            "BTCUSDT", servertime
+                        )
+                    print(f"MODEL NONE COUNT VALUE = {self.model_none_count}")
 
 
 def on_exec():
