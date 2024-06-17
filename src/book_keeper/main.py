@@ -35,7 +35,7 @@ class BookKeeper:
             columns=[
                 "Timestamp",
                 "Symbol",
-                "EntryPrice",
+                "entryPrice",
                 "PositionAmt",
             ]
         )
@@ -187,10 +187,10 @@ class BookKeeper:
             data=[
                 timestamp,
                 self.symbol,
-                float(temp["EntryPrice"].iloc[0]),
+                float(temp["entryPrice"].iloc[0]),
                 float(temp["positionAmt"].iloc[0]),
             ],
-            index=["Timestamp", "Symbol", "EntryPrice", "PositionAmt"],
+            index=["Timestamp", "Symbol", "entryPrice", "PositionAmt"],
         )
 
         self.historical_positions = pd.concat(
