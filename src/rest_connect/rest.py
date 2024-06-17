@@ -112,7 +112,7 @@ class FutureTestnetGateway(BaseRESTGateway):
         return create_query(
             self._base_url, api_url, self._api_key, self._api_secret, order_params
         )
-    
+
     def get_all_open_orders(self, symbol, timestamp):
         # not sure about the kwargs yet
         api_url = "/fapi/v1/openOrders"
@@ -122,7 +122,7 @@ class FutureTestnetGateway(BaseRESTGateway):
         return create_query(
             self._base_url, api_url, self._api_key, self._api_secret, order_params
         )
-    
+
     def get_account_balance(self, timestamp):
         api_url = "/fapi/v2/balance"
         # market order parameters
@@ -147,10 +147,10 @@ class FutureTestnetGateway(BaseRESTGateway):
     def send_order(self):
         pass
 
-    def cancel_order(self,symbol, timestamp,orderid):
+    def cancel_order(self, symbol, timestamp, orderid):
         api_url = "/fapi/v1/order"
         # market order parameters
-        order_params = {"symbol": symbol, "timestamp": timestamp, "orderid":orderid}
+        order_params = {"symbol": symbol, "timestamp": timestamp, "orderid": orderid}
         # create the query
         return create_delete(
             self._base_url, api_url, self._api_key, self._api_secret, order_params
