@@ -302,8 +302,6 @@ def on_exec():
     print("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
 
 
-
-
 # create this app.py to serve as our actual strat file, the main.py is used by strategy already.
 if __name__ == "__main__":
     load_dotenv(dotenv_path=".env")
