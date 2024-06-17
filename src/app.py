@@ -237,6 +237,7 @@ class ExecManager:
                             # THIS IS TERRIBLE BTW
                             print(f"what is current {direction} : {order_quantity}")
                             if len(current_open_orders) < MAX_OPEN_ORDER_COUNT:
+                                self.model_none_count = 0
                                 data = {
                                     "symbol": "BTCUSDT",
                                     "price": limit_price,
