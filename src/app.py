@@ -209,6 +209,7 @@ class ExecManager:
                         current_open_orders = self.restGateway.get_all_open_orders(
                             "BTCUSDT", servertime
                         )
+                        order_queue_ok = True
                         if len(current_open_orders) >= MAX_OPEN_ORDER_COUNT:
                             # see if we can cancel
                             for x in current_open_orders:
@@ -225,10 +226,14 @@ class ExecManager:
                                     self.restGateway.cancel_order(
                                         "BTCUSDT", servertime, x["orderId"]
                                     )
+                                    order_queue_ok = True
                                 else:
                                     print("NO CANCELLABLE ORDERS")
+                                    order_queue_ok = False
+                        else:
+                            order_queue_ok = True
 
-                        if approval:
+                        if approval and order_queue_ok:
                             # THIS IS TERRIBLE BTW
                             print(f"what is current {direction} : {order_quantity}")
                             if len(current_open_orders) < MAX_OPEN_ORDER_COUNT:
