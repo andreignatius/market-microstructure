@@ -5,7 +5,7 @@ class BacktestTradingStrategy:
         data,
         start_cash=10000,
         trading_lot=7500,
-        stop_loss_threshold=0.02,
+        stop_loss_threshold=0.01,
         leverage_factor=1,
         margin_call_threshold=0.5,
         annual_interest_rate=0.0,
@@ -56,7 +56,7 @@ class BacktestTradingStrategy:
                 prediction == "Sell"
                 and self.btc_inventory > 0
                 and ( self.buy_price is not None 
-                      and not usd_btc_spot_rate < self.buy_price * 1.02)
+                      and not usd_btc_spot_rate < self.buy_price * 1.01)
                 # and (
                 #     self.buy_price is None
                 #     or (

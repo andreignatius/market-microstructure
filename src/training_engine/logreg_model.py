@@ -27,7 +27,7 @@ class LogRegModel(BaseModel):
         super().__init__(file_path)
         # Elastic Net parameters
         l1_ratio = 0.5  # L1 weight in the range [0,1]. 0 is L2, 1 is L1.
-        alpha = 0.5  # Regularization strength. Higher values mean more regularization.
+        alpha = 1.0  # Regularization strength. Higher values mean more regularization.
         self.model = LogisticRegression(
             class_weight="balanced",
             penalty="elasticnet",
