@@ -99,11 +99,8 @@ class RiskManager:
         latest_market_price = market_price_df["Price"].iloc[-1]
         current_btc_inventory = self.get_current_btc_inventory()
 
-<<<<<<< HEAD
         stoploss_threshold = 0.01  # Set stoploss threshold here
-=======
-        stoploss_threshold = 0.02  # Set stoploss threshold here
->>>>>>> main
+        
         stoploss_limit_value = (1 - stoploss_threshold) * last_buy_price
         print(
             f"STOPLOSS CHECK: stoploss_limit_value{stoploss_limit_value}, latest_market_price{latest_market_price},  last_buy_price{last_buy_price}"
@@ -169,22 +166,16 @@ class RiskManager:
         # sellprice is limit price for sell order
         market_price_df = self.book_keeper.return_historical_market_prices()
         latest_market_price = float(market_price_df["Price"].iloc[-1])
-<<<<<<< HEAD
-        min_sell_threshold = 1.02 # Set minimum sell price ratio to avoid selling at loss
-=======
->>>>>>> main
+
+        min_sell_threshold = 1.01 # Set minimum sell price ratio to avoid selling at loss
+
         lower_sell_price_ratio = 0.9  # Set lower sell ratio here (don't sell too low)
-        upper_sell_price_ratio = (
-            1.4  # Set upper sell ratio here (avoid very high sell prices due to error)
-        )
+        upper_sell_price_ratio = 1.4  # Set upper sell ratio here (avoid very high sell prices due to error)
+
         if (
             latest_market_price * lower_sell_price_ratio <= sellprice
             and sellprice <= latest_market_price * upper_sell_price_ratio
-<<<<<<< HEAD
             and sellprice >= last_buy_price * min_sell_threshold
-=======
-            and sellprice >= last_buy_price
->>>>>>> main
         ):
             return True  # Allow sell order if sellprice between lower and upper bounds
         else:
@@ -197,8 +188,4 @@ class RiskManager:
             return True  # Allow buy/sell order
         else:
             print("Check trade symbol")
-<<<<<<< HEAD
             return False
-=======
-            return False
->>>>>>> main
