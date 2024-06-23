@@ -29,7 +29,7 @@ class TradingStrategy:
         self.queue = queue
         self.raw_data = pd.DataFrame(columns=["Timestamp", "Price"])
         self.data = pd.DataFrame(columns=["Timestamp", "Price"])
-        self.file_path = "ohlc_seconds.csv"
+        self.file_path = "ohlc_minutes.csv"
         self.peaks = []
         self.troughs = []
         self.smoothed_prices = []
@@ -71,8 +71,8 @@ class TradingStrategy:
 
         self.raw_data.index = pd.to_datetime(self.raw_data.index)
 
-        # Define cutoff time for the last 300 seconds
-        cutoff_time = pd.Timestamp.now() - pd.Timedelta(seconds=300)
+        # Define cutoff time for the last 24 hours
+        cutoff_time = pd.Timestamp.now() - pd.Timedelta(minutes=1440)
         # print("cutoff_time: ", cutoff_time)
         # print("check data000: ", self.data)
         # print("type0: ", type(self.data.index))
@@ -82,8 +82,10 @@ class TradingStrategy:
         # print("len: ", len(self.raw_data))
 
         try:
-            # Resample the data by minute and compute OHLC
-            ohlc = self.raw_data["Price"].resample("S").ohlc()
+            # #Resample the data by seconds and compute OHLC
+            # ohlc = self.raw_data["Price"].resample("S").ohlc()
+            #Resample the data by minute and compute OHLC
+            ohlc = self.raw_data["Price"].resample("T").ohlc()
         except:
             return
 
@@ -96,7 +98,7 @@ class TradingStrategy:
         # # Append or update the CSV file instead of rewriting it entirely
         # ohlc.to_csv('ohlc_minutes.csv', mode='a', header=not file_exists)
         print("???????????????????????????????????????do i even reach here")
-        ohlc.to_csv("ohlc_seconds.csv")
+        ohlc.to_csv("ohlc_minutes.csv")
 
         # Display the resulting OHLC values
         # print("OHLC data: ", ohlc)

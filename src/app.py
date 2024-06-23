@@ -25,6 +25,8 @@ MAX_OPEN_ORDER_COUNT = 1
 MAX_OPEN_ORDER_LIFE_SECONDS =30
 ORDER_SIZE = 0.002
 
+global_time_elapsed = 0
+
 class ExecManager:
     def __init__(self, tradeExecutorObj, bookKeeperObj, restGateway) -> None:
         self.queue = Queue()
@@ -124,6 +126,9 @@ class ExecManager:
                 self.strategy.collect_new_data()
                 self.strategy.aggregate_data()  # Only aggregate data, do not collect here
                 # if time_elapsed > 40:
+                if global_time_elapsed % 60 == 1:
+                    return
+                print("***checking model output***")
                 output = (
                     self.strategy.analyze_data()
                 )  # analyse data and gather prediction
@@ -226,13 +231,11 @@ class ExecManager:
                         else:
                             print(f"PRICE HAS MOVED SIGNIFICANTLY, IGNORE {limit_price} vs {final_check_price}")
                 else:
-                    print("THIS IS DOGSHIT IF NESTING, MODEL SAYS NOTHING")
+                    print("MODEL SAYS NOTHING")
 
 
 def on_exec():
     print("Lorem ipsum dolor sit amet, consectetur adipiscing elit.")
-
-
 
 
 # create this app.py to serve as our actual strat file, the main.py is used by strategy already.
@@ -240,8 +243,8 @@ if __name__ == "__main__":
     load_dotenv(dotenv_path=".env")
     API_KEY = os.getenv("API_KEY")
     API_SECRET = os.getenv("API_SECRET")
-    # lets fucking go
-    print("LETS FUCKING GO")
+    # program begins
+    print("PROGRAM BEGINS")
 
     # 1. symbol and API key. someone can help the getenv thing pls
     symbol = "BTCUSDT"
@@ -291,5 +294,7 @@ if __name__ == "__main__":
 
     # 8. I think this is just for looping.
     while True:
-        time.sleep(10)
+        time.sleep(1)
+        global_time_elapsed +=1
+        print("global_time_elapsed: ", global_time_elapsed)
         print("done wait")
